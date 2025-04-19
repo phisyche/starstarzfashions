@@ -32,6 +32,17 @@ export default {
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
+				kenya: {
+					red: '#BE0027',
+					green: '#007A3D',
+					black: '#1A1A1A',
+					white: '#FFFFFF',
+				},
+				accent: {
+					orange: '#FF5722',
+					yellow: '#FFC107',
+					teal: '#00BCD4',
+				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'
