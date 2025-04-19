@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 
 export function SiteFooter() {
@@ -6,10 +5,10 @@ export function SiteFooter() {
     <footer className="bg-gray-900 text-white py-12">
       <div className="container grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <h3 className="text-xl font-bold mb-4">Kenyan<span className="text-kenya-red">Fashion</span></h3>
+          <h3 className="text-xl font-bold mb-4">Star<span className="text-kenya-red">Starz</span>Ltd</h3>
           <p className="text-gray-300 mb-4">
-            Authentic Kenyan fashion delivered to your doorstep. 
-            Showcasing the best of local designers and cultural heritage.
+            Premium fashion and style delivered with excellence. 
+            Showcasing unique designs and quality craftsmanship.
           </p>
           <div className="flex space-x-4">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors">
@@ -104,9 +103,9 @@ export function SiteFooter() {
         </div>
       </div>
       
-      <div className="border-t border-gray-800 mt-10 pt-6 container">
+      <div className="border-t border-gray-800 mt-10 container">
         <p className="text-center text-gray-400 text-sm">
-          &copy; {new Date().getFullYear()} KenyanFashion. All rights reserved.
+          &copy; {new Date().getFullYear()} StarStarz Ltd. All rights reserved.
         </p>
       </div>
     </footer>

@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/products/product-card";
@@ -23,10 +22,10 @@ export default function Index() {
         <div className="container relative z-10">
           <div className="max-w-xl">
             <h1 className="text-5xl font-bold text-white mb-4">
-              Authentic Kenyan Fashion Delivered to Your Door
+              Premium Fashion Delivered with Style
             </h1>
             <p className="text-xl text-white/90 mb-8">
-              Discover unique pieces that blend traditional heritage with modern style
+              Discover unique pieces that combine elegance and quality
             </p>
             <div className="flex flex-wrap gap-4">
               <Button asChild size="lg" className="bg-kenya-red hover:bg-red-700">
@@ -99,8 +98,8 @@ export default function Index() {
             <div>
               <h2 className="text-3xl font-bold mb-4">Exclusive Collections</h2>
               <p className="text-gray-300 mb-6">
-                Our collections feature unique pieces that blend traditional Kenyan heritage with modern styles.
-                Each piece tells a story of our rich cultural history and contemporary design.
+                Our collections feature unique pieces that blend contemporary design 
+                with exceptional craftsmanship. Each piece tells a story of style and quality.
               </p>
               <Button asChild className="bg-kenya-red hover:bg-red-700">
                 <Link to="/collections">Explore Collections</Link>

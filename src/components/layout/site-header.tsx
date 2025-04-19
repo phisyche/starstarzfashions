@@ -51,7 +51,7 @@ export function SiteHeader() {
 
           {/* Logo */}
           <Link to="/" className="font-bold text-xl">
-            Kenyan<span className="text-kenya-red">Fashion</span>
+            Star<span className="text-kenya-red">Starz</span>Ltd
           </Link>
 
           {/* Desktop Nav */}
