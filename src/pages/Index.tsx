@@ -1,6 +1,6 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
-import { HeroSection } from "@/components/home/hero-section";
+import { JumbotronSlider } from "@/components/home/jumbotron-slider";
 import { CategoriesSection } from "@/components/home/categories-section";
 import { FeaturedProducts } from "@/components/home/featured-products";
 import { CollectionsBanner } from "@/components/home/collections-banner";
@@ -11,7 +11,7 @@ import { Newsletter } from "@/components/home/newsletter";
 export default function Index() {
   return (
     <MainLayout>
-      <HeroSection />
+      <JumbotronSlider />
       <CategoriesSection />
       <FeaturedProducts />
       <CollectionsBanner />
