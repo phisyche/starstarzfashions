@@ -163,11 +163,9 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-bold mb-4">Payment Method</h2>
                 
                 <Tabs defaultValue="mpesa" onValueChange={setPaymentMethod} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="mpesa">M-Pesa</TabsTrigger>
-                    <TabsTrigger value="card">Card</TabsTrigger>
-                    <TabsTrigger value="airtel">Airtel Money</TabsTrigger>
-                    <TabsTrigger value="bank">Bank Transfer</TabsTrigger>
+                    <TabsTrigger value="card">Visa Card</TabsTrigger>
                   </TabsList>
                   
                   {/* M-Pesa */}
@@ -244,56 +242,6 @@ export default function CheckoutPage() {
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <ShoppingBag className="h-4 w-4" />
                         <span>Your payment information is securely processed</span>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  {/* Airtel Money */}
-                  <TabsContent value="airtel" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="bg-orange-50 text-orange-800 p-3 rounded-lg text-sm flex gap-2">
-                        <Info className="h-5 w-5 flex-shrink-0" />
-                        <div>
-                          <p className="font-medium">How to pay with Airtel Money:</p>
-                          <ol className="list-decimal ml-4 mt-1 text-orange-700">
-                            <li>Enter your Airtel Money registered phone number.</li>
-                            <li>Complete your order by clicking "Place Order".</li>
-                            <li>You'll receive an Airtel Money prompt to complete payment.</li>
-                            <li>Enter your Airtel Money PIN to complete the transaction.</li>
-                          </ol>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="airtel-number">Airtel Money Phone Number</Label>
-                        <Input
-                          id="airtel-number"
-                          required={paymentMethod === "airtel"}
-                          placeholder="07XX XXX XXX"
-                        />
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  {/* Bank Transfer */}
-                  <TabsContent value="bank" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm">
-                        <p className="font-medium mb-2">Bank Transfer Instructions:</p>
-                        <p>Please transfer the total amount to the following account:</p>
-                        <ul className="mt-2 space-y-1 text-blue-700">
-                          <li><span className="font-medium">Bank:</span> KCB Bank</li>
-                          <li><span className="font-medium">Account Name:</span> Kenyan Fashion Hub Ltd</li>
-                          <li><span className="font-medium">Account Number:</span> 1234567890</li>
-                          <li><span className="font-medium">Branch:</span> Nairobi Main</li>
-                          <li><span className="font-medium">Reference:</span> Your Order Number (will be provided)</li>
-                        </ul>
-                        <p className="mt-2">
-                          After making the payment, please email your payment confirmation to 
-                          <a href="mailto:payments@kenyanfashion.com" className="underline ml-1">
-                            payments@kenyanfashion.com
-                          </a>
-                        </p>
                       </div>
                     </div>
                   </TabsContent>
@@ -413,8 +361,6 @@ export default function CheckoutPage() {
               <div className="flex justify-center items-center gap-2 flex-wrap mt-2">
                 <div className="bg-gray-100 rounded px-2 py-1 text-xs font-medium">M-PESA</div>
                 <div className="bg-gray-100 rounded px-2 py-1 text-xs font-medium">VISA</div>
-                <div className="bg-gray-100 rounded px-2 py-1 text-xs font-medium">MASTERCARD</div>
-                <div className="bg-gray-100 rounded px-2 py-1 text-xs font-medium">AIRTEL MONEY</div>
               </div>
             </div>
           </div>
