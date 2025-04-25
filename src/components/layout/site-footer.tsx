@@ -59,12 +59,6 @@ export function SiteFooter() {
           <h4 className="font-semibold text-lg mb-4">Customer Service</h4>
           <ul className="space-y-2">
             <li>
-              <Link to="/shipping-policy" className="text-gray-300 hover:text-white transition-colors">Shipping Policy</Link>
-            </li>
-            <li>
-              <Link to="/returns" className="text-gray-300 hover:text-white transition-colors">Returns & Exchanges</Link>
-            </li>
-            <li>
               <Link to="/faq" className="text-gray-300 hover:text-white transition-colors">FAQ</Link>
             </li>
             <li>
@@ -96,8 +90,6 @@ export function SiteFooter() {
             <div className="flex items-center space-x-3">
               <span className="bg-white text-xs rounded px-2 py-1 font-medium text-black">M-PESA</span>
               <span className="bg-white text-xs rounded px-2 py-1 font-medium text-black">VISA</span>
-              <span className="bg-white text-xs rounded px-2 py-1 font-medium text-black">MASTERCARD</span>
-              <span className="bg-white text-xs rounded px-2 py-1 font-medium text-black">AIRTEL</span>
             </div>
           </div>
         </div>
