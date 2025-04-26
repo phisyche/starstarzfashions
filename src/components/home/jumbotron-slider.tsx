@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,21 +12,21 @@ import type { EmblaCarouselType } from "embla-carousel";
 const slides = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1563178406-4cdc2923acbc?auto=format&fit=crop&q=80",
-    title: "African Modern",
-    description: "Contemporary African fashion for the modern lifestyle",
+    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80",
+    title: "Summer Collection 2024",
+    description: "Discover our latest fashion pieces for the season",
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1605289982774-9a6fef564df8?auto=format&fit=crop&q=80",
-    title: "Traditional Excellence",
-    description: "Authentic African designs with a modern twist",
+    image: "https://images.unsplash.com/photo-1576185850227-1f72b7f8d483?auto=format&fit=crop&q=80",
+    title: "Elegant Essentials",
+    description: "Timeless pieces for your wardrobe",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1581944759519-5129fb6e41c0?auto=format&fit=crop&q=80",
-    title: "New Collection",
-    description: "Discover our latest African-inspired pieces",
+    image: "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&q=80",
+    title: "Luxury Fashion",
+    description: "Premium clothing and accessories",
   },
 ];
 
@@ -95,10 +94,10 @@ export function JumbotronSlider() {
                 src={slide.image}
                 alt={slide.title}
                 className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${
-                  isTransitioning ? "scale-105" : "scale-100"
+                  isTransitioning ? "scale-110" : "scale-100"
                 }`}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-b from-theme-blue/30 to-theme-pink/20" />
               <div className="absolute inset-0 flex items-center">
                 <div className="container mx-auto px-4">
                   <div className={`max-w-2xl transition-all duration-700 ${
@@ -113,9 +112,9 @@ export function JumbotronSlider() {
                     <Button 
                       asChild 
                       size="lg"
-                      className="bg-kenya-red hover:bg-red-700 text-lg px-8 py-6"
+                      className="bg-theme-pink hover:bg-theme-blue text-lg px-8 py-6 transition-colors duration-300"
                     >
-                      <a href="/shop">Explore Collection</a>
+                      <a href="/shop">Shop Now</a>
                     </Button>
                   </div>
                 </div>
@@ -124,16 +123,15 @@ export function JumbotronSlider() {
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 border-none text-white" />
-      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 border-none text-white" />
+      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-theme-pink/20 border-none text-white" />
+      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-theme-pink/20 border-none text-white" />
       
-      {/* Slide indicators */}
       <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2">
         {slides.map((_, index) => (
           <button
             key={index}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              current === index ? "bg-white w-8" : "bg-white/50"
+              current === index ? "bg-theme-pink w-8" : "bg-white/50"
             }`}
             onClick={() => api?.scrollTo(index)}
             aria-label={`Go to slide ${index + 1}`}

@@ -1,16 +1,41 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { categories } from "@/data/products";
 
 export function CategoriesSection() {
+  const categories = [
+    {
+      id: 1,
+      name: "Women's Fashion",
+      slug: "womens-fashion",
+      image: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?auto=format&fit=crop&q=80",
+    },
+    {
+      id: 2,
+      name: "Men's Fashion",
+      slug: "mens-fashion",
+      image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&q=80",
+    },
+    {
+      id: 3,
+      name: "Accessories",
+      slug: "accessories",
+      image: "https://images.unsplash.com/photo-1582142306909-195724d33ffc?auto=format&fit=crop&q=80",
+    },
+    {
+      id: 4,
+      name: "Shoes",
+      slug: "shoes",
+      image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&q=80",
+    }
+  ];
+
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gradient-to-r from-theme-pink/5 to-theme-blue/5">
       <div className="container">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold">Shop by Category</h2>
-          <Button asChild variant="ghost" className="gap-1">
+          <Button asChild variant="ghost" className="gap-1 hover:text-theme-pink">
             <Link to="/shop">
               View All <ArrowRight className="h-4 w-4" />
             </Link>
@@ -23,7 +48,7 @@ export function CategoriesSection() {
               to={`/shop/${category.slug}`}
               className="group relative h-64 overflow-hidden rounded-lg"
             >
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors z-10" />
+              <div className="absolute inset-0 bg-gradient-to-b from-theme-blue/20 to-theme-pink/30 group-hover:opacity-75 transition-opacity z-10" />
               <img
                 src={category.image}
                 alt={category.name}
