@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form";
-import { Image, X, Loader2 } from "lucide-react";
+import { Image, X, Loader2, Plus } from "lucide-react";
 
 interface ProductImageUploadProps {
   imagePreview: string | null;

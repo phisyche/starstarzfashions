@@ -11,6 +11,8 @@ export const productFormSchema = z.object({
   slug: z.string().min(1, 'Slug is required'),
   is_featured: z.boolean().default(false),
   is_new: z.boolean().default(false),
+  // Optional array of additional image URLs
+  images: z.array(z.string()).optional(),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

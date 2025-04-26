@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
@@ -8,25 +8,24 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { useCallback } from "react";
 import type { EmblaCarouselType } from "embla-carousel";
 
 const slides = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1601762603339-fd61e28b698a?auto=format&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1563178406-4cdc2923acbc?auto=format&fit=crop&q=80",
     title: "African Modern",
     description: "Contemporary African fashion for the modern lifestyle",
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1550614000-4895a10e1bfd?auto=format&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1605289982774-9a6fef564df8?auto=format&fit=crop&q=80",
     title: "Traditional Excellence",
     description: "Authentic African designs with a modern twist",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1549400861-d5a3c594e412?auto=format&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1581944759519-5129fb6e41c0?auto=format&fit=crop&q=80",
     title: "New Collection",
     description: "Discover our latest African-inspired pieces",
   },
@@ -35,30 +34,47 @@ const slides = [
 export function JumbotronSlider() {
   const [api, setApi] = useState<EmblaCarouselType | null>(null);
   const [current, setCurrent] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const onSelect = useCallback(() => {
     if (!api) return;
     setCurrent(api.selectedScrollSnap());
   }, [api]);
 
+  const resetAutoplay = useCallback(() => {
+    if (autoplayTimerRef.current) {
+      clearTimeout(autoplayTimerRef.current);
+    }
+    
+    autoplayTimerRef.current = setTimeout(() => {
+      if (api) {
+        setIsTransitioning(true);
+        api.scrollNext();
+        setTimeout(() => setIsTransitioning(false), 800);
+      }
+      resetAutoplay();
+    }, 5000);
+  }, [api]);
+
+  const stopAutoplay = useCallback(() => {
+    if (autoplayTimerRef.current) {
+      clearTimeout(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     if (!api) return;
+    
     api.on("select", onSelect);
+    resetAutoplay();
+    
     return () => {
       api.off("select", onSelect);
+      stopAutoplay();
     };
-  }, [api, onSelect]);
-
-  // Auto-slide effect
-  useEffect(() => {
-    if (!api) return;
-    
-    const interval = setInterval(() => {
-      api.scrollNext();
-    }, 5000); // Change slide every 5 seconds
-    
-    return () => clearInterval(interval);
-  }, [api]);
+  }, [api, onSelect, resetAutoplay, stopAutoplay]);
 
   return (
     <Carousel
@@ -68,6 +84,8 @@ export function JumbotronSlider() {
       }}
       setApi={setApi}
       className="relative w-full h-[80vh]"
+      onMouseEnter={stopAutoplay}
+      onMouseLeave={resetAutoplay}
     >
       <CarouselContent>
         {slides.map((slide) => (
@@ -76,16 +94,20 @@ export function JumbotronSlider() {
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="absolute inset-0 w-full h-full object-cover transform transition-transform duration-1000 scale-100 hover:scale-105"
+                className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${
+                  isTransitioning ? "scale-105" : "scale-100"
+                }`}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/20" />
               <div className="absolute inset-0 flex items-center">
                 <div className="container mx-auto px-4">
-                  <div className="max-w-2xl opacity-0 animate-[fadeIn_0.8s_ease-in-out_forwards]">
-                    <h2 className="text-6xl font-bold mb-6 text-white">
+                  <div className={`max-w-2xl transition-all duration-700 ${
+                    isTransitioning ? "opacity-0 translate-y-10" : "opacity-100 translate-y-0"
+                  }`}>
+                    <h2 className="text-5xl md:text-6xl font-bold mb-6 text-white">
                       {slide.title}
                     </h2>
-                    <p className="text-2xl mb-8 text-white/90">
+                    <p className="text-xl md:text-2xl mb-8 text-white/90">
                       {slide.description}
                     </p>
                     <Button 
@@ -106,7 +128,7 @@ export function JumbotronSlider() {
       <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 border-none text-white" />
       
       {/* Slide indicators */}
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+      <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2">
         {slides.map((_, index) => (
           <button
             key={index}
