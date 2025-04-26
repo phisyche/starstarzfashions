@@ -28,11 +28,26 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   useEffect(() => {
     // Get initial session
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const initializeAuth = async () => {
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          setLoading(false);
+          return;
+        }
+        
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+      } catch (error) {
+        console.error("Unexpected error during auth initialization:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(

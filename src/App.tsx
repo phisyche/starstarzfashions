@@ -26,6 +26,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminAddProduct from "./pages/admin/AdminAddProduct";
 import AdminEditProduct from "./pages/admin/AdminEditProduct";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminViewOrder from "./pages/admin/AdminViewOrder";
 import { SupabaseProvider } from "./context/SupabaseContext";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/admin/products/add" element={<AdminAddProduct />} />
             <Route path="/admin/products/edit/:id" element={<AdminEditProduct />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/orders/:id" element={<AdminViewOrder />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

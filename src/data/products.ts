@@ -1,3 +1,4 @@
+
 import { ProductType } from "@/components/products/product-card";
 
 export const products: ProductType[] = [
@@ -6,7 +7,7 @@ export const products: ProductType[] = [
     name: "African Print Blazer",
     price: 12500,
     originalPrice: 15000,
-    image: "https://images.unsplash.com/photo-1578932750294-f5075e85f702",
+    image: "https://images.unsplash.com/photo-1618503551238-7f981a41d142",
     category: "Men's Outerwear",
     isNew: true,
     isFeatured: true,
@@ -17,7 +18,7 @@ export const products: ProductType[] = [
     name: "Dashiki Shirt",
     price: 4500,
     originalPrice: 6000,
-    image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952",
+    image: "https://images.unsplash.com/photo-1600267204026-85c3cc8e96cd",
     category: "Men's Shirts",
     isFeatured: true,
     slug: "dashiki-shirt"
@@ -26,7 +27,7 @@ export const products: ProductType[] = [
     id: "3",
     name: "Ankara Print Shirt",
     price: 3800,
-    image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35",
+    image: "https://images.unsplash.com/photo-1622470953794-aa9c70b0fb9d",
     category: "Men's Shirts",
     isNew: true,
     slug: "ankara-print-shirt"
@@ -36,7 +37,7 @@ export const products: ProductType[] = [
     name: "Kitenge Print Shirt",
     price: 3200,
     originalPrice: 3800,
-    image: "https://images.unsplash.com/photo-1578932750294-f5075e85f702",
+    image: "https://images.unsplash.com/photo-1507680232228-e0d4c52eaa56",
     category: "Men's Shirts",
     isFeatured: true,
     slug: "kitenge-print-shirt"
@@ -45,7 +46,7 @@ export const products: ProductType[] = [
     id: "5",
     name: "Beaded Necklace",
     price: 1800,
-    image: "https://images.unsplash.com/photo-1576689560324-1f4f28ca6716",
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908",
     category: "Jewelry",
     slug: "beaded-necklace"
   },
@@ -53,7 +54,7 @@ export const products: ProductType[] = [
     id: "6",
     name: "Ankara Print Skirt",
     price: 2500,
-    image: "https://images.unsplash.com/photo-1533659828870-95ee305cee3e",
+    image: "https://images.unsplash.com/photo-1551163943-3f7253a3a614",
     category: "Women's Bottoms",
     slug: "ankara-print-skirt"
   },
@@ -62,7 +63,7 @@ export const products: ProductType[] = [
     name: "African Print Headwrap",
     price: 1500,
     originalPrice: 1800,
-    image: "https://images.unsplash.com/photo-1577224682806-983150abd261",
+    image: "https://images.unsplash.com/photo-1566933293069-b55c7f326dd4",
     category: "Accessories",
     isFeatured: true,
     slug: "african-print-headwrap"
@@ -71,7 +72,7 @@ export const products: ProductType[] = [
     id: "8",
     name: "African Print Jacket",
     price: 4800,
-    image: "https://images.unsplash.com/photo-1509319117193-57bab727e09d",
+    image: "https://images.unsplash.com/photo-1550614000-4895a10e1bfd",
     category: "Outerwear",
     isNew: true,
     slug: "african-print-jacket"
@@ -85,19 +86,19 @@ export const categories = [
   {
     id: "1",
     name: "Modern African",
-    image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952",
+    image: "https://images.unsplash.com/photo-1621072156002-e2fccdc0b176",
     slug: "modern-african"
   },
   {
     id: "2",
     name: "Traditional Wear",
-    image: "https://images.unsplash.com/photo-1578932750294-f5075e85f702",
+    image: "https://images.unsplash.com/photo-1617019114583-affb34d1b3cd",
     slug: "traditional-wear"
   },
   {
     id: "3",
     name: "Accessories",
-    image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35",
+    image: "https://images.unsplash.com/photo-1620293023837-6ca93abe081f",
     slug: "accessories"
   }
 ];
@@ -107,14 +108,14 @@ export const collections = [
     id: "1",
     name: "Modern Heritage",
     description: "Contemporary takes on traditional African designs",
-    image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952",
+    image: "https://images.unsplash.com/photo-1523381294911-8d3cead13475",
     slug: "modern-heritage"
   },
   {
     id: "2",
     name: "Urban African",
     description: "Modern African fashion for the city",
-    image: "https://images.unsplash.com/photo-1578932750294-f5075e85f702",
+    image: "https://images.unsplash.com/photo-1600267204026-85c3cc8e96cd",
     slug: "urban-african"
   }
 ];

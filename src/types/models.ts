@@ -63,3 +63,20 @@ export interface OrderItem {
   size?: string | null;
   color?: string | null;
 }
+
+// Add needed types for MPesa payment processing
+export interface MPesaPaymentPayload {
+  phone: string;
+  amount: number;
+  orderId: string;
+}
+
+export interface MPesaPaymentResponse {
+  success: boolean;
+  checkoutRequestID?: string;
+  merchantRequestID?: string;
+  responseCode?: string;
+  responseDescription?: string;
+  error?: string;
+  orderId?: string;
+}
