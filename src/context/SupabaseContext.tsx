@@ -3,11 +3,59 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient, SupabaseClient, Session } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
 
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Initialize Supabase client with proper fallbacks
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+// Create a mock client if environment variables aren't available
+let supabaseClient: SupabaseClient;
+
+try {
+  if (!supabaseUrl) {
+    console.warn('Supabase URL is missing. Please set the VITE_SUPABASE_URL environment variable.');
+  }
+  if (!supabaseAnonKey) {
+    console.warn('Supabase Anon Key is missing. Please set the VITE_SUPABASE_ANON_KEY environment variable.');
+  }
+  
+  // Only create the client if both URL and key are available
+  if (supabaseUrl && supabaseAnonKey) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  } else {
+    // Create a mock client that returns empty results
+    supabaseClient = {
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase is not configured') }),
+        signOut: () => Promise.resolve({ error: null }),
+      },
+      from: () => ({
+        select: () => ({ data: null, error: null }),
+        insert: () => ({ data: null, error: null }),
+        update: () => ({ data: null, error: null }),
+        delete: () => ({ data: null, error: null }),
+      }),
+    } as any;
+  }
+} catch (error) {
+  console.error('Error initializing Supabase client:', error);
+  // Create a mock client as fallback
+  supabaseClient = {
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase client initialization failed') }),
+      signOut: () => Promise.resolve({ error: null }),
+    },
+    from: () => ({
+      select: () => ({ data: null, error: null }),
+      insert: () => ({ data: null, error: null }),
+      update: () => ({ data: null, error: null }),
+      delete: () => ({ data: null, error: null }),
+    }),
+  } as any;
+}
 
 type SupabaseContextType = {
   supabase: SupabaseClient;
@@ -65,6 +113,16 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Check if Supabase is properly configured
+      if (!supabaseUrl || !supabaseAnonKey) {
+        toast({
+          title: "Configuration Error",
+          description: "Supabase is not properly configured. Please check your environment variables.",
+          variant: "destructive",
+        });
+        throw new Error("Supabase is not properly configured");
+      }
+      
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
