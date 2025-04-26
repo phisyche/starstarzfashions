@@ -28,30 +28,32 @@ export function ProductCard({ product }: ProductCardProps) {
     : 0;
 
   return (
-    <Card className="overflow-hidden group h-full flex flex-col relative">
-      {product.isNew && (
-        <Badge className="absolute top-2 left-2 z-10 bg-kenya-red text-white">
-          New
-        </Badge>
-      )}
-      {product.originalPrice && (
-        <Badge variant="outline" className="absolute top-2 right-2 z-10 bg-accent-yellow text-black font-medium">
-          {discountPercentage}% OFF
-        </Badge>
-      )}
-      <Link to={`/product/${product.slug}`} className="flex-1 flex flex-col">
-        <div className="overflow-hidden aspect-square relative">
+    <Card className="group relative h-full flex flex-col overflow-hidden border-none shadow-none">
+      <Link to={`/product/${product.slug}`} className="flex-1">
+        <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
           <img 
             src={product.image} 
             alt={product.name}
-            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
           />
+          {product.isNew && (
+            <Badge className="absolute top-2 left-2 z-10 bg-theme-pink text-white">
+              New
+            </Badge>
+          )}
+          {product.originalPrice && (
+            <Badge variant="outline" className="absolute top-2 right-2 z-10 bg-theme-blue text-white">
+              {discountPercentage}% OFF
+            </Badge>
+          )}
         </div>
-        <CardContent className="flex-1 flex flex-col p-4">
-          <div className="text-sm text-muted-foreground mb-1">{product.category}</div>
-          <h3 className="font-medium text-base mb-1 line-clamp-2">{product.name}</h3>
-          <div className="mt-auto flex items-center space-x-2">
-            <Price amount={product.price} size="md" />
+        <CardContent className="p-4 space-y-2">
+          <div className="text-sm text-muted-foreground">{product.category}</div>
+          <h3 className="font-medium text-base line-clamp-2 group-hover:text-theme-pink transition-colors">
+            {product.name}
+          </h3>
+          <div className="flex items-center space-x-2">
+            <Price amount={product.price} className="text-lg font-semibold" />
             {product.originalPrice && (
               <span className="text-muted-foreground line-through text-sm">
                 KES {product.originalPrice}
@@ -61,7 +63,10 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardContent>
       </Link>
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full" size="sm">
+        <Button 
+          className="w-full bg-theme-blue hover:bg-theme-pink transition-colors"
+          size="sm"
+        >
           <ShoppingCart className="h-4 w-4 mr-2" />
           Add to Cart
         </Button>
