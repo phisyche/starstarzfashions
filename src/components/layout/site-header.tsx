@@ -170,8 +170,8 @@ export function SiteHeader() {
                 <ShoppingCart className="h-5 w-5" />
               </Button>
             </Link>
-            <Link to="/account">
-              <Button variant="ghost" size="icon" aria-label="Account">
+            <Link to="/login">
+              <Button variant="ghost" size="icon" aria-label="Login">
                 <User className="h-5 w-5" />
               </Button>
             </Link>
