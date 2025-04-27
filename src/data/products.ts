@@ -1,3 +1,4 @@
+
 import { ProductType } from "@/components/products/product-card";
 
 export const products: ProductType[] = [
@@ -20,6 +21,7 @@ export const products: ProductType[] = [
     image: "https://images.unsplash.com/photo-1551048632-24e444b48a0f?auto=format&fit=crop&q=80",
     category: "Tops",
     isFeatured: true,
+    isBestSeller: true,
     slug: "classic-white-blouse"
   },
   {
@@ -39,6 +41,7 @@ export const products: ProductType[] = [
     image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80",
     category: "Accessories",
     isFeatured: true,
+    isBestSeller: true,
     slug: "leather-crossbody-bag"
   },
   {
@@ -55,7 +58,8 @@ export const products: ProductType[] = [
     price: 6500,
     image: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?auto=format&fit=crop&q=80",
     category: "Bottoms",
-    slug: "pleated-midi-skirt"
+    slug: "pleated-midi-skirt",
+    isNew: true
   },
   {
     id: "7",
@@ -75,11 +79,49 @@ export const products: ProductType[] = [
     category: "Outerwear",
     isNew: true,
     slug: "tailored-blazer"
-  }
+  },
+  {
+    id: "9",
+    name: "Linen Summer Shirt",
+    price: 5500,
+    image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80",
+    category: "Tops",
+    isNew: true,
+    slug: "linen-summer-shirt"
+  },
+  {
+    id: "10",
+    name: "Floral Maxi Dress",
+    price: 9500,
+    image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&q=80",
+    category: "Dresses",
+    isBestSeller: true,
+    slug: "floral-maxi-dress"
+  },
+  {
+    id: "11",
+    name: "Leather Ankle Boots",
+    price: 18500,
+    originalPrice: 22000,
+    image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80",
+    category: "Shoes",
+    isBestSeller: true,
+    slug: "leather-ankle-boots"
+  },
+  {
+    id: "12",
+    name: "Oversized Knit Sweater",
+    price: 7800,
+    image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&q=80",
+    category: "Tops",
+    isBestSeller: true,
+    slug: "oversized-knit-sweater"
+  },
 ];
 
 export const featuredProducts = products.filter(product => product.isFeatured);
 export const newArrivals = products.filter(product => product.isNew);
+export const bestSellers = products.filter(product => product.isBestSeller);
 
 export const categories = [
   {
@@ -105,6 +147,24 @@ export const categories = [
     name: "Shoes",
     image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80",
     slug: "shoes"
+  },
+  {
+    id: "5",
+    name: "Bottoms",
+    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=80",
+    slug: "bottoms"
+  },
+  {
+    id: "6",
+    name: "Outerwear",
+    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80",
+    slug: "outerwear"
+  },
+  {
+    id: "7",
+    name: "Jewelry",
+    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80",
+    slug: "jewelry"
   }
 ];
 

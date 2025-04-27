@@ -1,10 +1,11 @@
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Price } from "@/components/ui/price";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Eye } from "lucide-react";
 
 export interface ProductType {
   id: string;
@@ -15,6 +16,7 @@ export interface ProductType {
   category: string;
   isNew?: boolean;
   isFeatured?: boolean;
+  isBestSeller?: boolean;
   slug: string;
 }
 
@@ -23,52 +25,76 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
     : 0;
 
   return (
-    <Card className="group relative h-full flex flex-col overflow-hidden border-none shadow-none">
+    <Card 
+      className="group relative h-full flex flex-col overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <Link to={`/product/${product.slug}`} className="flex-1">
-        <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
+        <div className="aspect-square overflow-hidden bg-gray-50 relative">
           <img 
             src={product.image} 
             alt={product.name}
-            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
           />
-          {product.isNew && (
-            <Badge className="absolute top-2 left-2 z-10 bg-theme-pink text-white">
-              New
-            </Badge>
-          )}
-          {product.originalPrice && (
-            <Badge variant="outline" className="absolute top-2 right-2 z-10 bg-theme-blue text-white">
-              {discountPercentage}% OFF
-            </Badge>
-          )}
+          <div className="absolute top-0 left-0 w-full p-2 flex flex-wrap gap-1">
+            {product.isNew && (
+              <Badge className="bg-theme-pink text-white">
+                New
+              </Badge>
+            )}
+            {product.originalPrice && (
+              <Badge variant="outline" className="bg-theme-blue text-white">
+                {discountPercentage}% OFF
+              </Badge>
+            )}
+            {product.isBestSeller && (
+              <Badge className="bg-amber-500 text-white">
+                Best Seller
+              </Badge>
+            )}
+          </div>
         </div>
-        <CardContent className="p-4 space-y-2">
-          <div className="text-sm text-muted-foreground">{product.category}</div>
-          <h3 className="font-medium text-base line-clamp-2 group-hover:text-theme-pink transition-colors">
+        <CardContent className="p-3 space-y-1">
+          <div className="text-xs text-muted-foreground">{product.category}</div>
+          <h3 className="font-medium text-sm line-clamp-1 group-hover:text-theme-pink transition-colors">
             {product.name}
           </h3>
           <div className="flex items-center space-x-2">
-            <Price amount={product.price} className="text-lg font-semibold" />
+            <Price amount={product.price} className="text-base font-semibold" />
             {product.originalPrice && (
-              <span className="text-muted-foreground line-through text-sm">
+              <span className="text-muted-foreground line-through text-xs">
                 KES {product.originalPrice}
               </span>
             )}
           </div>
         </CardContent>
       </Link>
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-3 pt-0 flex gap-2">
         <Button 
-          className="w-full bg-theme-blue hover:bg-theme-pink transition-colors"
+          className="w-full bg-theme-blue hover:bg-theme-pink transition-colors text-xs"
           size="sm"
         >
-          <ShoppingCart className="h-4 w-4 mr-2" />
+          <ShoppingCart className="h-3.5 w-3.5 mr-1" />
           Add to Cart
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          className="border-theme-pink hover:bg-theme-pink/10"
+          asChild
+        >
+          <Link to={`/product/${product.slug}`}>
+            <Eye className="h-3.5 w-3.5" />
+          </Link>
         </Button>
       </CardFooter>
     </Card>
