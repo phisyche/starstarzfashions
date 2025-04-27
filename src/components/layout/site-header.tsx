@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, Search, ShoppingCart, User } from "lucide-react";
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function SiteHeader() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,7 +30,6 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="flex items-center justify-between w-full gap-4">
-          {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild className="lg:hidden">
               <Button variant="ghost" size="icon" aria-label="Menu">
@@ -80,12 +79,10 @@ export function SiteHeader() {
             </SheetContent>
           </Sheet>
 
-          {/* Logo */}
           <Link to="/" className="font-bold text-xl">
             Star<span className="text-theme-pink">Starz</span>Ltd
           </Link>
 
-          {/* Desktop Nav with Dropdown */}
           <div className="hidden lg:flex items-center">
             <NavigationMenu>
               <NavigationMenuList>
@@ -138,7 +135,6 @@ export function SiteHeader() {
             </NavigationMenu>
           </div>
 
-          {/* Search, Cart, Account */}
           <div className="flex items-center gap-2">
             <form onSubmit={handleSearch} className="relative hidden md:flex w-full max-w-sm items-center">
               <Input
@@ -170,11 +166,30 @@ export function SiteHeader() {
                 <ShoppingCart className="h-5 w-5" />
               </Button>
             </Link>
-            <Link to="/login">
-              <Button variant="ghost" size="icon" aria-label="Login">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="User menu">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[325px]">
+                <DialogHeader>
+                  <DialogTitle>Account</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col gap-2 py-4">
+                  <Link to="/login">
+                    <Button variant="outline" className="w-full justify-start">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button className="w-full justify-start">
+                      Create Account
+                    </Button>
+                  </Link>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

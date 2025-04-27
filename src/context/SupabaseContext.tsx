@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient, SupabaseClient, Session } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
@@ -62,6 +61,7 @@ type SupabaseContextType = {
   session: Session | null;
   user: any | null;
   signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<any>;
   loading: boolean;
 };
@@ -143,6 +143,37 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     }
   };
 
+  const signUp = async (email: string, password: string) => {
+    try {
+      if (!supabaseUrl || !supabaseAnonKey) {
+        toast({
+          title: "Configuration Error",
+          description: "Supabase is not properly configured. Please check your environment variables.",
+          variant: "destructive",
+        });
+        throw new Error("Supabase is not properly configured");
+      }
+      
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data;
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: error.message || "Unable to create account",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabaseClient.auth.signOut();
@@ -165,6 +196,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     session,
     user,
     signIn,
+    signUp,
     signOut,
     loading,
   };
