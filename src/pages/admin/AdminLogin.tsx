@@ -19,7 +19,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function AdminLogin() {
-  const { signIn, user } = useSupabase();
+  const { signIn, user, isAdmin } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -32,23 +32,32 @@ export default function AdminLogin() {
     },
   });
   
-  // If user is already logged in, redirect to dashboard
-  if (user) {
+  // If user is already logged in and is admin, redirect to dashboard
+  if (user && isAdmin) {
     navigate('/admin/dashboard');
+    return null;
+  } else if (user && !isAdmin) {
+    // If user is logged in but not admin, show error
+    toast({
+      title: "Access Denied",
+      description: "You don't have administrator privileges.",
+      variant: "destructive",
+    });
+    navigate('/');
     return null;
   }
   
   const onSubmit = async (data: FormValues) => {
     try {
       setIsLoading(true);
+      // Sign in the user
       await signIn(data.email, data.password);
-      navigate('/admin/dashboard');
-      toast({
-        title: "Login successful",
-        description: "Welcome to the admin dashboard",
-      });
+      
+      // Check if user has admin privileges after successful login
+      // isAdmin will be updated in the context automatically
+      
+      // The user will be redirected on the next render if they have admin privileges
     } catch (error) {
-      // Error is handled in the signIn function
       setIsLoading(false);
     }
   };

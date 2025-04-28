@@ -26,20 +26,28 @@ export function Newsletter() {
         <img
           src="/images/newsletter-bg.jpg"
           alt="Newsletter background"
-          className="w-full h-full object-cover object-left opacity-20"
+          className="w-full h-full object-cover object-left"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
       </div>
       
-      <div className="container relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
+      <div className="container relative z-10 flex flex-col md:flex-row items-center">
+        <div className="md:w-1/2 mb-8 md:mb-0">
+          <img 
+            src="/images/newsletter-image.jpg" 
+            alt="Fashion model" 
+            className="rounded-lg shadow-xl max-w-sm mx-auto md:mx-0"
+          />
+        </div>
+        
+        <div className="md:w-1/2 md:pl-12 text-center md:text-left max-w-xl">
           <h2 className="text-3xl font-bold mb-4 text-white">
             Subscribe to Our Newsletter
           </h2>
           <p className="text-white/90 mb-8">
-            Get the latest updates on new arrivals, special offers, and exclusive discounts.
+            Get the latest updates on new arrivals, special offers, and exclusive discounts. Join our community of fashion enthusiasts today!
           </p>
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto md:mx-0">
             <Input
               type="email"
               placeholder="Your email address"

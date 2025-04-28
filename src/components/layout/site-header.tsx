@@ -1,10 +1,13 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, Search, ShoppingCart, User } from "lucide-react";
+import { Menu, ShoppingCart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { GlobalSearch } from "@/components/search/global-search";
+import { useSupabase } from "@/context/SupabaseContext";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -13,17 +16,32 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 export function SiteHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+  const { user, signOut } = useSupabase();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     window.location.href = `/shop?search=${encodeURIComponent(searchQuery)}`;
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   return (
@@ -136,60 +154,70 @@ export function SiteHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <form onSubmit={handleSearch} className="relative hidden md:flex w-full max-w-sm items-center">
-              <Input
-                type="search"
-                placeholder="Search products..."
-                className="pr-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Button 
-                type="submit" 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-0"
-                aria-label="Search"
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-            </form>
-            {isMobile && (
-              <Link to="/search">
-                <Button variant="ghost" size="icon" aria-label="Search">
-                  <Search className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
+            <div className="hidden md:block">
+              <GlobalSearch />
+            </div>
+            
             <Link to="/cart">
               <Button variant="ghost" size="icon" aria-label="Cart">
                 <ShoppingCart className="h-5 w-5" />
               </Button>
             </Link>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="User menu">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[325px]">
-                <DialogHeader>
-                  <DialogTitle>Account</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col gap-2 py-4">
-                  <Link to="/login">
-                    <Button variant="outline" className="w-full justify-start">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/register">
-                    <Button className="w-full justify-start">
-                      Create Account
-                    </Button>
-                  </Link>
-                </div>
-              </DialogContent>
-            </Dialog>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="User menu">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <div className="px-2 py-1.5 text-sm font-medium">
+                    {user.email}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/account" className="cursor-pointer w-full">
+                      My Account
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders" className="cursor-pointer w-full">
+                      My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="User menu">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[325px]">
+                  <DialogHeader>
+                    <DialogTitle>Account</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex flex-col gap-2 py-4">
+                    <Link to="/login">
+                      <Button variant="outline" className="w-full justify-start">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/register">
+                      <Button className="w-full justify-start">
+                        Create Account
+                      </Button>
+                    </Link>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
       </div>

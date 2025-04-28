@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import Callback from "./pages/auth/Callback";
 import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
 import CategoryDetail from "./pages/CategoryDetail";
@@ -44,6 +46,7 @@ const App = () => (
             <Route path="/shop" element={<Shop />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/auth/callback" element={<Callback />} />
             <Route path="/shop/:slug" element={<CategoryDetail />} />
             <Route path="/collections" element={<Collections />} />
             <Route path="/collections/:slug" element={<CollectionDetail />} />

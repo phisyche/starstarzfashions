@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -20,8 +21,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function Login() {
-  const { signIn, user } = useSupabase();
+  const { signIn, signInWithGoogle, user } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -43,12 +45,18 @@ export default function Login() {
       setIsLoading(true);
       await signIn(data.email, data.password);
       navigate('/account');
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
     } catch (error) {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      await signInWithGoogle();
+      // The redirect will happen automatically
+    } catch (error) {
+      setIsGoogleLoading(false);
     }
   };
   
@@ -111,6 +119,25 @@ export default function Login() {
               </Button>
             </form>
           </Form>
+          
+          <div className="relative my-6">
+            <Separator />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-card px-2 text-sm text-muted-foreground">
+                OR
+              </span>
+            </div>
+          </div>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading}
+          >
+            {isGoogleLoading ? "Connecting..." : "Sign in with Google"}
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <div className="text-sm text-muted-foreground text-center">

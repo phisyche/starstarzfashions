@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -24,8 +25,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function Register() {
-  const { signUp } = useSupabase();
+  const { signUp, signInWithGoogle } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -43,18 +45,18 @@ export default function Register() {
       setIsLoading(true);
       await signUp(data.email, data.password);
       navigate('/login');
-      toast({
-        title: "Registration successful",
-        description: "Please check your email to confirm your account.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
+    } catch (error) {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      await signInWithGoogle();
+      // The redirect will happen automatically
+    } catch (error) {
+      setIsGoogleLoading(false);
     }
   };
   
@@ -136,6 +138,25 @@ export default function Register() {
               </Button>
             </form>
           </Form>
+          
+          <div className="relative my-6">
+            <Separator />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-card px-2 text-sm text-muted-foreground">
+                OR
+              </span>
+            </div>
+          </div>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading}
+          >
+            {isGoogleLoading ? "Connecting..." : "Sign up with Google"}
+          </Button>
         </CardContent>
         <CardFooter className="flex justify-center">
           <div className="text-sm text-muted-foreground">

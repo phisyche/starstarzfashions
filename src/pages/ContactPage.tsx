@@ -1,20 +1,46 @@
+
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { GoogleMapComponent } from "@/components/contact/GoogleMap";
 
 export default function ContactPage() {
   const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast({
-      title: "Message Sent",
-      description: "We'll get back to you as soon as possible.",
-    });
+    setIsSubmitting(true);
+    
+    // Here we would typically send the form data to a server
+    setTimeout(() => {
+      toast({
+        title: "Message Sent",
+        description: "We'll get back to you as soon as possible.",
+      });
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: ""
+      });
+      setIsSubmitting(false);
+    }, 1000);
   };
 
   return (
@@ -57,14 +83,16 @@ export default function ContactPage() {
                   </a>
                 </div>
               </div>
-            </div>
-
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-4">Location</h2>
-              <p className="text-muted-foreground">
-                StarStarz Ltd<br />
-                Nairobi, Kenya
-              </p>
+              <div className="flex items-center gap-4">
+                <MapPin className="h-6 w-6 text-kenya-red" />
+                <div>
+                  <h3 className="font-semibold">Visit Us</h3>
+                  <p className="text-muted-foreground">
+                    StarStarz Ltd, Kimathi Street<br />
+                    Nairobi, Kenya
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="mt-8">
@@ -74,6 +102,13 @@ export default function ContactPage() {
                 Saturday: 10:00 AM - 4:00 PM<br />
                 Sunday: Closed
               </p>
+            </div>
+
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold mb-6">Our Location</h2>
+              <div className="h-[300px] w-full rounded-lg overflow-hidden">
+                <GoogleMapComponent />
+              </div>
             </div>
           </div>
 
@@ -85,19 +120,41 @@ export default function ContactPage() {
                 <label htmlFor="name" className="block text-sm font-medium mb-2">
                   Name
                 </label>
-                <Input id="name" required placeholder="Your name" />
+                <Input 
+                  id="name" 
+                  required 
+                  placeholder="Your name" 
+                  value={formData.name}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
               </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-2">
                   Email
                 </label>
-                <Input id="email" type="email" required placeholder="Your email" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  required 
+                  placeholder="Your email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
               </div>
               <div>
                 <label htmlFor="subject" className="block text-sm font-medium mb-2">
                   Subject
                 </label>
-                <Input id="subject" required placeholder="Message subject" />
+                <Input 
+                  id="subject" 
+                  required 
+                  placeholder="Message subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
               </div>
               <div>
                 <label htmlFor="message" className="block text-sm font-medium mb-2">
@@ -108,10 +165,17 @@ export default function ContactPage() {
                   required 
                   placeholder="Your message"
                   className="min-h-[150px]"
+                  value={formData.message}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
                 />
               </div>
-              <Button type="submit" className="w-full bg-kenya-red hover:bg-kenya-red/90">
-                Send Message
+              <Button 
+                type="submit" 
+                className="w-full bg-kenya-red hover:bg-kenya-red/90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Sending Message..." : "Send Message"}
               </Button>
             </form>
           </div>
