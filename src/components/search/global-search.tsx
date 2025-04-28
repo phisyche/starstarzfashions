@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/command";
 import { useSupabase } from "@/context/SupabaseContext";
 import { Search } from "lucide-react";
+import { products, categories } from "@/data/products"; // Import local data for fallback
 
 type SearchResult = {
   id: string;
@@ -55,66 +56,74 @@ export function GlobalSearch() {
     setIsLoading(true);
 
     try {
-      // Search products
-      const { data: products } = await supabase
+      // Try to search in Supabase first
+      const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('id, name, slug, category, image')
         .ilike('name', `%${searchQuery}%`)
         .limit(5);
 
-      // Search categories
-      const { data: categories } = await supabase
+      if (productsError || !productsData) {
+        throw new Error('Supabase search failed, falling back to local data');
+      }
+
+      // Search categories from Supabase
+      const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('id, name, slug, image')
         .ilike('name', `%${searchQuery}%`)
         .limit(3);
 
-      // Search collections
-      const { data: collections } = await supabase
+      if (categoriesError || !categoriesData) {
+        throw new Error('Category search failed, falling back to local data');
+      }
+
+      // Search collections from Supabase
+      const { data: collectionsData, error: collectionsError } = await supabase
         .from('collections')
         .select('id, name, slug, image')
         .ilike('name', `%${searchQuery}%`)
         .limit(3);
 
-      // Format results
+      // Format results from Supabase
       const formattedResults: SearchResult[] = [
-        ...(products?.map(p => ({ ...p, type: 'product' as const })) || []),
-        ...(categories?.map(c => ({ ...c, type: 'category' as const, category: 'Category' })) || []),
-        ...(collections?.map(c => ({ ...c, type: 'collection' as const, category: 'Collection' })) || [])
+        ...(productsData?.map(p => ({ ...p, type: 'product' as const })) || []),
+        ...(categoriesData?.map(c => ({ ...c, type: 'category' as const, category: 'Category' })) || []),
+        ...(collectionsData?.map(c => ({ ...c, type: 'collection' as const, category: 'Collection' })) || [])
       ];
 
       setResults(formattedResults);
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('Search error, falling back to local data:', error);
       
       // Fallback to local search if Supabase fails
-      import('@/data/products').then(({ products, categories }) => {
-        const filteredProducts = products
-          .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-          .slice(0, 5)
-          .map(p => ({ 
-            id: p.id, 
-            name: p.name, 
-            slug: p.slug, 
-            category: p.category,
-            image: p.image,
-            type: 'product' as const 
-          }));
-          
-        const filteredCategories = categories
-          .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-          .slice(0, 3)
-          .map(c => ({ 
-            id: c.id, 
-            name: c.name, 
-            slug: c.slug,
-            category: 'Category',
-            image: c.image,
-            type: 'category' as const 
-          }));
-          
-        setResults([...filteredProducts, ...filteredCategories]);
-      });
+      const searchTermLower = searchQuery.toLowerCase();
+      
+      const filteredProducts = products
+        .filter(p => p.name.toLowerCase().includes(searchTermLower))
+        .slice(0, 5)
+        .map(p => ({ 
+          id: p.id, 
+          name: p.name, 
+          slug: p.slug, 
+          category: p.category,
+          image: p.image,
+          type: 'product' as const 
+        }));
+        
+      const filteredCategories = categories
+        .filter(c => c.name.toLowerCase().includes(searchTermLower))
+        .slice(0, 3)
+        .map(c => ({ 
+          id: c.id, 
+          name: c.name, 
+          slug: c.slug,
+          category: 'Category',
+          image: c.image,
+          type: 'category' as const 
+        }));
+        
+      setResults([...filteredProducts, ...filteredCategories]);
     } finally {
       setIsLoading(false);
     }
@@ -155,6 +164,7 @@ export function GlobalSearch() {
           value={query}
           onValueChange={handleSearch}
           ref={inputRef}
+          autoFocus
         />
         <CommandList>
           <CommandEmpty>

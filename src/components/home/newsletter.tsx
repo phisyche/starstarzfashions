@@ -23,8 +23,9 @@ export function Newsletter() {
   return (
     <section className="py-16 relative overflow-hidden">
       <div className="absolute inset-0 z-0">
+        {/* Added local background image */}
         <img
-          src="/images/newsletter-bg.jpg"
+          src="/images/newsletter-background.jpg"
           alt="Newsletter background"
           className="w-full h-full object-cover object-left"
         />

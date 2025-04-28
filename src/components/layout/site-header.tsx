@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, ShoppingCart, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, Search, ShoppingCart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -30,17 +30,12 @@ export function SiteHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
   const { user, signOut } = useSupabase();
+  const navigate = useNavigate();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = `/shop?search=${encodeURIComponent(searchQuery)}`;
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Sign out error:', error);
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery)}`);
     }
   };
 
@@ -113,21 +108,42 @@ export function SiteHeader() {
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="font-medium hover:text-theme-pink transition-colors">Shop</NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <div className="grid grid-cols-2 gap-4 p-4 w-[400px]">
-                      {categories.map((category) => (
-                        <NavigationMenuLink 
-                          key={category.id} 
-                          asChild 
-                          className="block p-2 hover:bg-muted rounded-md transition-colors"
+                    <div className="p-4 w-[600px]">
+                      <div className="mb-4">
+                        <Link 
+                          to="/shop" 
+                          className="block p-2 mb-2 text-center font-bold hover:bg-muted rounded-md transition-colors"
                         >
-                          <Link to={`/shop/${category.slug}`}>
-                            <div className="font-medium">{category.name}</div>
-                            <p className="text-sm text-muted-foreground">
-                              Browse {category.name.toLowerCase()} collection
-                            </p>
-                          </Link>
-                        </NavigationMenuLink>
-                      ))}
+                          View All Products
+                        </Link>
+                        <form onSubmit={handleSearch} className="flex gap-2">
+                          <Input
+                            type="search"
+                            placeholder="Search products..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                          <Button type="submit">
+                            <Search className="h-4 w-4" />
+                          </Button>
+                        </form>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        {categories.map((category) => (
+                          <NavigationMenuLink 
+                            key={category.id} 
+                            asChild 
+                            className="block p-2 hover:bg-muted rounded-md transition-colors"
+                          >
+                            <Link to={`/shop/${category.slug}`}>
+                              <div className="font-medium">{category.name}</div>
+                              <p className="text-sm text-muted-foreground">
+                                Browse {category.name.toLowerCase()} collection
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        ))}
+                      </div>
                     </div>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
@@ -155,7 +171,23 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-2">
             <div className="hidden md:block">
-              <GlobalSearch />
+              <form onSubmit={handleSearch} className="relative w-full sm:max-w-[200px]">
+                <Input
+                  type="search"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10"
+                />
+                <Button 
+                  type="submit" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-0 top-0"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
             </div>
             
             <Link to="/cart">
