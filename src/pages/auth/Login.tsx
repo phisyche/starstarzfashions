@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabase } from '@/context/SupabaseContext';
 import { useForm } from 'react-hook-form';
@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,9 +23,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function Login() {
-  const { signIn, signInWithGoogle, user } = useSupabase();
+  const { signIn, signInWithGoogle, user, supabase } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dbChecked, setDbChecked] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -35,6 +39,32 @@ export default function Login() {
     },
   });
   
+  useEffect(() => {
+    // Check if profiles table exists
+    const checkDatabase = async () => {
+      try {
+        // This will fail if the profiles table doesn't exist
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .limit(1);
+          
+        if (error && error.code === '42P01') {
+          setError("Database setup incomplete. Please run schema.sql in Supabase SQL editor.");
+        } else {
+          setDbChecked(true);
+        }
+      } catch (err: any) {
+        console.error("Database check error:", err);
+        setError("Could not verify database setup. Please ensure Supabase is properly configured.");
+      }
+    };
+    
+    if (supabase) {
+      checkDatabase();
+    }
+  }, [supabase]);
+  
   if (user) {
     navigate('/account');
     return null;
@@ -42,20 +72,24 @@ export default function Login() {
   
   const onSubmit = async (data: FormValues) => {
     try {
+      setError(null);
       setIsLoading(true);
       await signIn(data.email, data.password);
       navigate('/account');
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || "Failed to sign in");
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
+      setError(null);
       setIsGoogleLoading(true);
       await signInWithGoogle();
       // The redirect will happen automatically
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || "Failed to sign in with Google");
       setIsGoogleLoading(false);
     }
   };
@@ -70,6 +104,13 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField

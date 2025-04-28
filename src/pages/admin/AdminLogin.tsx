@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useSupabase } from '@/context/SupabaseContext';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -19,8 +21,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function AdminLogin() {
-  const { signIn, user, isAdmin } = useSupabase();
+  const { signIn, user, isAdmin, supabase } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dbChecked, setDbChecked] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -31,6 +35,31 @@ export default function AdminLogin() {
       password: '',
     },
   });
+  
+  useEffect(() => {
+    // Check if profiles table exists and has proper setup
+    const checkDatabase = async () => {
+      try {
+        // This will fail if the profiles table doesn't exist
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, is_admin')
+          .limit(1);
+          
+        if (error && error.code === '42P01') {
+          setError("Database setup incomplete. Please run schema.sql in Supabase SQL editor.");
+        } else {
+          setDbChecked(true);
+        }
+      } catch (err: any) {
+        console.error("Database check error:", err);
+      }
+    };
+    
+    if (supabase) {
+      checkDatabase();
+    }
+  }, [supabase]);
   
   // If user is already logged in and is admin, redirect to dashboard
   if (user && isAdmin) {
@@ -49,6 +78,7 @@ export default function AdminLogin() {
   
   const onSubmit = async (data: FormValues) => {
     try {
+      setError(null);
       setIsLoading(true);
       // Sign in the user
       await signIn(data.email, data.password);
@@ -57,7 +87,8 @@ export default function AdminLogin() {
       // isAdmin will be updated in the context automatically
       
       // The user will be redirected on the next render if they have admin privileges
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || "Failed to sign in");
       setIsLoading(false);
     }
   };
@@ -72,6 +103,13 @@ export default function AdminLogin() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -121,11 +159,32 @@ export default function AdminLogin() {
               </Button>
             </form>
           </Form>
+
+          {error && error.includes('Database setup incomplete') && (
+            <Alert className="mt-4">
+              <AlertTitle>Database Setup Required</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>Your Supabase database needs to be set up properly.</p>
+                <Link to="/admin/setup-guide">
+                  <Button variant="outline" size="sm" className="mt-2">
+                    View Setup Guide
+                  </Button>
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
-        <CardFooter className="border-t pt-4 mt-2">
-          <p className="text-sm text-muted-foreground">
-            Access to this area is restricted to authorized personnel only.
-          </p>
+        <CardFooter className="flex flex-col gap-2">
+          <div className="border-t pt-4 mt-2 w-full">
+            <p className="text-sm text-muted-foreground">
+              Access to this area is restricted to authorized personnel only.
+            </p>
+          </div>
+          <div className="text-sm text-center">
+            <Link to="/admin/setup-guide" className="text-primary hover:underline">
+              Need help setting up? View Supabase Setup Guide
+            </Link>
+          </div>
         </CardFooter>
       </Card>
     </div>

@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useSupabase } from '@/context/SupabaseContext';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,8 +10,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -25,9 +27,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function Register() {
-  const { signUp, signInWithGoogle } = useSupabase();
+  const { signUp, signInWithGoogle, supabase, user } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dbChecked, setDbChecked] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -39,23 +43,64 @@ export default function Register() {
       confirmPassword: '',
     },
   });
+
+  useEffect(() => {
+    // Check if profiles table exists
+    const checkDatabase = async () => {
+      try {
+        // This will fail if the profiles table doesn't exist
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .limit(1);
+          
+        if (error && error.code === '42P01') {
+          setError("Database setup incomplete. Please contact administrator.");
+        } else {
+          setDbChecked(true);
+        }
+      } catch (err: any) {
+        console.error("Database check error:", err);
+      }
+    };
+    
+    if (supabase) {
+      checkDatabase();
+    }
+  }, [supabase]);
+
+  if (user) {
+    navigate('/account');
+    return null;
+  }
   
   const onSubmit = async (data: FormValues) => {
     try {
+      setError(null);
       setIsLoading(true);
+      
       await signUp(data.email, data.password);
+      
+      toast({
+        title: "Registration successful",
+        description: "Please check your email to confirm your account.",
+      });
+      
       navigate('/login');
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || "Registration failed");
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
+      setError(null);
       setIsGoogleLoading(true);
       await signInWithGoogle();
       // The redirect will happen automatically
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || "Failed to sign up with Google");
       setIsGoogleLoading(false);
     }
   };
@@ -70,6 +115,13 @@ export default function Register() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -132,7 +184,7 @@ export default function Register() {
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={isLoading}
+                disabled={isLoading || !dbChecked}
               >
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
@@ -153,7 +205,7 @@ export default function Register() {
             variant="outline" 
             className="w-full" 
             onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading}
+            disabled={isGoogleLoading || !dbChecked}
           >
             {isGoogleLoading ? "Connecting..." : "Sign up with Google"}
           </Button>

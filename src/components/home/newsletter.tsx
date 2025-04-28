@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import placeholderImage from "/placeholder.svg";
 
 export function Newsletter() {
   const [email, setEmail] = useState("");
@@ -35,7 +36,7 @@ export function Newsletter() {
       <div className="container relative z-10 flex flex-col md:flex-row items-center">
         <div className="md:w-1/2 mb-8 md:mb-0">
           <img 
-            src="/images/newsletter-image.jpg" 
+            src={placeholderImage} 
             alt="Fashion model" 
             className="rounded-lg shadow-xl max-w-sm mx-auto md:mx-0"
           />
