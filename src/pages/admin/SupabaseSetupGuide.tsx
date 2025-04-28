@@ -220,7 +220,7 @@ SET is_admin = true
 WHERE id = 'USER_ID_HERE';`}</pre>
             </div>
             <p className="text-sm text-muted-foreground">
-              You can find your user ID in the Auth > Users section of your Supabase dashboard.
+              You can find your user ID in the Auth &rarr; Users section of your Supabase dashboard.
             </p>
           </CardContent>
         </Card>
