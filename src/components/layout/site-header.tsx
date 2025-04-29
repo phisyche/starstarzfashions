@@ -108,7 +108,7 @@ export function SiteHeader() {
             <img
           src="/public/new/starstarz/IMG-20250426-WA0020.jpg"
           alt="logo"
-          style={{ width: '100px', height: '100px', borderRadius: '10px' }}
+          style={{ width: '120px', height: '120px', borderRadius: '10px' }}
           className="w-full h-full object-cover object-left"
         />
 
