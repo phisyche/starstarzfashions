@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pifzapdqhaxgskypadws.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZnphcGRxaGF4Z3NreXBhZHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQwMTQ0NjgsImV4cCI6MjAyOTU5MDQ2OH0.WoRKdfVduaEOjfK3zZgHrYYEkaorb3nHwmgjk5lSdLQ';
 
+
 let supabaseClient: SupabaseClient;
 
 try {

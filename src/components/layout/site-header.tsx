@@ -102,7 +102,16 @@ export function SiteHeader() {
           </Sheet>
 
           <Link to="/" className="font-bold text-xl">
-            Star<span className="text-theme-pink">Starz</span>Ltd
+            {/* Star<span className="text-theme-pink">Starz</span>Ltd */}
+            {/* <img src="" alt="" /> */}
+
+            <img
+          src="/public/new/starstarz/IMG-20250426-WA0020.jpg"
+          alt="logo"
+          style={{ width: '100px', height: '100px', borderRadius: '10px' }}
+          className="w-full h-full object-cover object-left"
+        />
+
           </Link>
 
           <div className="hidden lg:flex items-center">
