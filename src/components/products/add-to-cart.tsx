@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { Minus, Plus, ShoppingCart } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Check } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AddToCartProps {
   productId: string;
@@ -25,7 +26,9 @@ export const AddToCart: React.FC<AddToCartProps> = ({
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
   const { addItem } = useCart();
+  const { toast } = useToast();
 
   const decreaseQuantity = () => {
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
@@ -48,9 +51,21 @@ export const AddToCart: React.FC<AddToCartProps> = ({
       color,
     });
     
+    toast({
+      title: "Added to cart",
+      description: `${quantity} × ${name} has been added to your cart.`,
+    });
+
+    // Show success state
     setTimeout(() => {
       setIsAdding(false);
-      setQuantity(1); // Reset quantity after adding
+      setIsAdded(true);
+      
+      // Reset to normal state after showing success
+      setTimeout(() => {
+        setIsAdded(false);
+        setQuantity(1);
+      }, 1500);
     }, 500);
   };
 
@@ -64,7 +79,7 @@ export const AddToCart: React.FC<AddToCartProps> = ({
             size="icon"
             className="h-9 w-9 rounded-none"
             onClick={decreaseQuantity}
-            disabled={quantity <= 1}
+            disabled={quantity <= 1 || isAdding}
           >
             <Minus className="h-3 w-3" />
           </Button>
@@ -75,6 +90,7 @@ export const AddToCart: React.FC<AddToCartProps> = ({
             size="icon"
             className="h-9 w-9 rounded-none"
             onClick={increaseQuantity}
+            disabled={isAdding}
           >
             <Plus className="h-3 w-3" />
           </Button>
@@ -83,11 +99,25 @@ export const AddToCart: React.FC<AddToCartProps> = ({
 
       <Button 
         onClick={handleAddToCart}
-        className="w-full"
-        disabled={isAdding}
+        className={`w-full transition-all ${isAdded ? 'bg-green-600 hover:bg-green-700' : ''}`}
+        disabled={isAdding || isAdded}
       >
-        <ShoppingCart className="mr-2 h-4 w-4" />
-        {isAdding ? "Adding..." : "Add to Cart"}
+        {isAdded ? (
+          <>
+            <Check className="mr-2 h-4 w-4" />
+            Added to Cart
+          </>
+        ) : isAdding ? (
+          <>
+            <div className="animate-spin mr-2 h-4 w-4 border-2 border-b-transparent rounded-full"></div>
+            Adding...
+          </>
+        ) : (
+          <>
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Add to Cart
+          </>
+        )}
       </Button>
     </div>
   );

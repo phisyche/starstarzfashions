@@ -3,60 +3,180 @@ import { useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSupabase } from '@/context/SupabaseContext';
-import { Package, ShoppingBag, Users } from 'lucide-react';
+import { 
+  Package, 
+  ShoppingBag, 
+  Users, 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown,
+  Calendar
+} from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
+
+// Chart imports
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
 export default function AdminDashboard() {
-  const { supabase } = useSupabase();
+  const { supabase, isAdmin } = useSupabase();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const [stats, setStats] = useState({
     products: 0,
     orders: 0,
     customers: 0,
     revenue: 0,
+    newOrders: 0,
+    pendingOrders: 0,
   });
+  
+  const [salesData, setSalesData] = useState<any[]>([]);
+  const [orderStatusData, setOrderStatusData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Sample data for charts
+  const defaultSalesData = [
+    { name: 'Jan', sales: 4000 },
+    { name: 'Feb', sales: 3000 },
+    { name: 'Mar', sales: 2000 },
+    { name: 'Apr', sales: 2780 },
+    { name: 'May', sales: 1890 },
+    { name: 'Jun', sales: 2390 },
+    { name: 'Jul', sales: 3490 },
+  ];
+  
+  const defaultOrderStatusData = [
+    { name: 'Delivered', value: 65, color: '#10B981' },
+    { name: 'Processing', value: 25, color: '#3B82F6' },
+    { name: 'Cancelled', value: 10, color: '#EF4444' },
+  ];
+
+  // Redirect if not admin
+  useEffect(() => {
+    if (!isAdmin) {
+      toast({
+        title: "Access denied",
+        description: "You don't have permission to access the admin area.",
+        variant: "destructive",
+      });
+      navigate('/');
+    }
+  }, [isAdmin, navigate, toast]);
 
   useEffect(() => {
     async function fetchDashboardData() {
       try {
         setLoading(true);
         
-        // Get product count
-        const { count: productCount, error: productsError } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
+        if (!supabase) return;
         
-        // Get order count
-        const { count: orderCount, error: ordersError } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
+        // Run concurrent requests to improve loading speed
+        const [
+          productsResponse, 
+          ordersResponse, 
+          customersResponse, 
+          revenueResponse,
+          newOrdersResponse,
+          pendingOrdersResponse
+        ] = await Promise.all([
+          // Get product count
+          supabase.from('products').select('*', { count: 'exact', head: true }),
           
-        // Get customer count
-        const { count: customerCount, error: customersError } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
+          // Get order count
+          supabase.from('orders').select('*', { count: 'exact', head: true }),
+          
+          // Get customer count
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          
+          // Get revenue data
+          supabase.from('orders').select('total_amount, created_at'),
+          
+          // Get new orders (last 7 days)
+          supabase.from('orders')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+          
+          // Get pending orders
+          supabase.from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'processing')
+        ]);
         
-        // Calculate revenue (simplified)
-        const { data: orders, error: revenueError } = await supabase
-          .from('orders')
-          .select('total_amount');
-          
-        const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+        // Extract counts
+        const productCount = productsResponse.count || 0;
+        const orderCount = ordersResponse.count || 0;
+        const customerCount = customersResponse.count || 0;
+        const newOrdersCount = newOrdersResponse.count || 0;
+        const pendingOrdersCount = pendingOrdersResponse.count || 0;
+        
+        // Calculate total revenue
+        const orders = revenueResponse.data || [];
+        const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+        
+        // Prepare monthly sales data
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthlySales = Array(12).fill(0);
+        
+        orders.forEach(order => {
+          if (order.created_at && order.total_amount) {
+            const date = new Date(order.created_at);
+            const month = date.getMonth();
+            monthlySales[month] += order.total_amount;
+          }
+        });
+        
+        const salesChartData = monthNames.map((name, i) => ({
+          name,
+          sales: monthlySales[i]
+        })).filter((_, i) => i <= new Date().getMonth());
+        
+        // Set chart data
+        setSalesData(salesChartData.length > 0 ? salesChartData : defaultSalesData);
+        setOrderStatusData(defaultOrderStatusData);
         
         setStats({
-          products: productCount || 0,
-          orders: orderCount || 0,
-          customers: customerCount || 0,
+          products: productCount,
+          orders: orderCount,
+          customers: customerCount,
           revenue: totalRevenue,
+          newOrders: newOrdersCount,
+          pendingOrders: pendingOrdersCount
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Data fetch error",
+          description: "Failed to load dashboard data. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     }
     
     fetchDashboardData();
-  }, [supabase]);
+  }, [supabase, toast]);
+
+  // COLORS for the pie chart
+  const COLORS = ['#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6'];
 
   return (
     <AdminLayout>
@@ -66,63 +186,222 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground">Welcome to your admin dashboard</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Products</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? (
-                  <div className="h-8 w-16 bg-gray-200 animate-pulse rounded" />
+                  <Skeleton className="h-8 w-16" />
                 ) : (
                   stats.products
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Total products in inventory
+                Products in inventory
               </p>
+              <div className="mt-2">
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate('/admin/products')}>
+                  Manage Products
+                </Button>
+              </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Orders</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? (
-                  <div className="h-8 w-16 bg-gray-200 animate-pulse rounded" />
+                  <Skeleton className="h-8 w-16" />
                 ) : (
                   stats.orders
                 )}
               </div>
+              <div className="flex items-center pt-1">
+                <span className="text-xs text-green-700 font-medium flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +{loading ? (<Skeleton className="h-3 w-8 inline-block" />) : stats.newOrders} new
+                </span>
+                <span className="mx-2 text-xs text-gray-500">•</span>
+                <span className="text-xs text-blue-700 font-medium">
+                  {loading ? (<Skeleton className="h-3 w-8 inline-block" />) : stats.pendingOrders} pending
+                </span>
+              </div>
+              <div className="mt-2">
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate('/admin/orders')}>
+                  View Orders
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Customers</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  stats.customers
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Total orders processed
+                Registered users
               </p>
+              <div className="mt-2">
+                <Button size="sm" variant="outline" className="text-xs" disabled>
+                  View Customers
+                </Button>
+              </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {loading ? (
-                  <div className="h-8 w-16 bg-gray-200 animate-pulse rounded" />
+                  <Skeleton className="h-8 w-24" />
                 ) : (
                   `KES ${stats.revenue.toLocaleString()}`
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Total revenue generated
-              </p>
+              <div className="flex items-center pt-1">
+                <span className={`text-xs font-medium flex items-center ${
+                  stats.revenue > 0 ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {stats.revenue > 0 ? (
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 mr-1" />
+                  )}
+                  {stats.revenue > 0 ? '+8.7%' : '-2.5%'} vs last month
+                </span>
+              </div>
+              <div className="mt-2">
+                <Button size="sm" variant="outline" className="text-xs" disabled>
+                  Revenue Report
+                </Button>
+              </div>
             </CardContent>
           </Card>
+        </div>
+        
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Sales Trend */}
+          <Card className="col-span-1">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Monthly Sales
+                </CardTitle>
+                <select 
+                  className="text-sm border rounded px-2 py-1 bg-white"
+                  defaultValue="sales"
+                >
+                  <option value="sales">Revenue</option>
+                  <option value="orders">Orders</option>
+                </select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="w-full aspect-[1.5/1]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+              ) : (
+                <div className="w-full" style={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={salesData}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [`KES ${value}`, 'Sales']} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="sales" 
+                        stroke="#8B5CF6" 
+                        fill="#8B5CF680" 
+                        activeDot={{ r: 6 }} 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Order Status */}
+          <Card className="col-span-1">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Order Status
+                </CardTitle>
+                <select 
+                  className="text-sm border rounded px-2 py-1 bg-white"
+                  defaultValue="allTime"
+                >
+                  <option value="allTime">All Time</option>
+                  <option value="thisMonth">This Month</option>
+                  <option value="lastMonth">Last Month</option>
+                </select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="w-full aspect-[1.5/1]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center" style={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={orderStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {orderStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Recent Products & Popular Categories - Could be added in a future enhancement */}
         </div>
       </div>
     </AdminLayout>

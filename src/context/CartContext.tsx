@@ -14,28 +14,50 @@ export interface CartItem {
   color?: string;
 }
 
+export interface FavoriteItem {
+  id: string;
+  productId: string;
+  name: string;
+  price: number;
+  image: string;
+  dateAdded: string;
+}
+
 interface CartContextType {
   items: CartItem[];
+  favorites: FavoriteItem[];
   itemCount: number;
+  favoriteCount: number;
   addItem: (item: Omit<CartItem, 'id'>) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   isLoading: boolean;
+  addToFavorites: (item: Omit<FavoriteItem, 'id' | 'dateAdded'>) => void;
+  removeFromFavorites: (id: string) => void;
+  isFavorite: (productId: string) => boolean;
+  subtotal: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user, supabase } = useSupabase();
 
   // Calculate total number of items in cart
   const itemCount = items.reduce((count, item) => count + item.quantity, 0);
+  
+  // Calculate number of favorites
+  const favoriteCount = favorites.length;
+  
+  // Calculate subtotal
+  const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
 
-  // Load cart from localStorage on component mount
+  // Load cart and favorites from localStorage on component mount
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
@@ -45,12 +67,85 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Failed to parse cart from localStorage:', error);
       }
     }
+    
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+      try {
+        setFavorites(JSON.parse(savedFavorites));
+      } catch (error) {
+        console.error('Failed to parse favorites from localStorage:', error);
+      }
+    }
   }, []);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
+  
+  // Save favorites to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  // Load cart and favorites from Supabase if user is logged in
+  useEffect(() => {
+    const syncWithDatabase = async () => {
+      if (!user || !supabase) return;
+      
+      setIsLoading(true);
+      
+      try {
+        // Fetch cart items from database
+        const { data: cartData, error: cartError } = await supabase
+          .from('cart_items')
+          .select('*')
+          .eq('user_id', user.id);
+          
+        if (cartError) throw cartError;
+        
+        if (cartData && cartData.length > 0) {
+          // If there are items in the database, use those
+          setItems(cartData.map(item => ({
+            id: item.id,
+            productId: item.product_id,
+            name: item.product_name,
+            price: item.price,
+            image: item.image_url,
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color
+          })));
+        }
+        
+        // Fetch favorite items from database
+        const { data: favData, error: favError } = await supabase
+          .from('favorite_items')
+          .select('*')
+          .eq('user_id', user.id);
+          
+        if (favError) throw favError;
+        
+        if (favData && favData.length > 0) {
+          // If there are favorites in the database, use those
+          setFavorites(favData.map(item => ({
+            id: item.id,
+            productId: item.product_id,
+            name: item.product_name,
+            price: item.price,
+            image: item.image_url,
+            dateAdded: item.created_at
+          })));
+        }
+      } catch (error) {
+        console.error('Error syncing with database:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    syncWithDatabase();
+  }, [user, supabase]);
 
   // Add item to cart
   const addItem = (newItem: Omit<CartItem, 'id'>) => {
@@ -123,17 +218,74 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: "All items have been removed from your cart",
     });
   };
+  
+  // Add to favorites
+  const addToFavorites = (item: Omit<FavoriteItem, 'id' | 'dateAdded'>) => {
+    setFavorites(currentFavorites => {
+      // Check if item already exists in favorites
+      const existingItem = currentFavorites.find(
+        favorite => favorite.productId === item.productId
+      );
+      
+      if (existingItem) {
+        toast({
+          title: "Already in favorites",
+          description: `${item.name} is already in your favorites`,
+        });
+        return currentFavorites;
+      } else {
+        // Add new item if it doesn't exist
+        const favoriteWithId = {
+          ...item,
+          id: crypto.randomUUID(),
+          dateAdded: new Date().toISOString()
+        };
+        
+        toast({
+          title: "Added to favorites",
+          description: `${item.name} added to your favorites`,
+        });
+        
+        return [...currentFavorites, favoriteWithId];
+      }
+    });
+  };
+  
+  // Remove from favorites
+  const removeFromFavorites = (id: string) => {
+    setFavorites(currentFavorites => {
+      const itemToRemove = currentFavorites.find(item => item.id === id);
+      if (itemToRemove) {
+        toast({
+          title: "Removed from favorites",
+          description: `${itemToRemove.name} removed from your favorites`,
+        });
+      }
+      return currentFavorites.filter(item => item.id !== id);
+    });
+  };
+  
+  // Check if product is in favorites
+  const isFavorite = (productId: string) => {
+    return favorites.some(item => item.productId === productId);
+  };
 
   return (
     <CartContext.Provider
       value={{
         items,
+        favorites,
         itemCount,
+        favoriteCount,
         addItem,
         removeItem,
         updateQuantity,
         clearCart,
-        isLoading
+        isLoading,
+        addToFavorites,
+        removeFromFavorites,
+        isFavorite,
+        subtotal
       }}
     >
       {children}

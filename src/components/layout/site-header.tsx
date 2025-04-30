@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useSupabase } from '@/context/SupabaseContext';
 import { ShoppingCart, User, Menu } from 'lucide-react';
@@ -10,10 +10,30 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { toast } from '@/components/ui/use-toast';
 
 export function SiteHeader() {
   const { user, signOut } = useSupabase();
   const { itemCount } = useCart();
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Logout failed",
+        description: "There was a problem signing out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
@@ -50,7 +70,7 @@ export function SiteHeader() {
                   <User className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={signOut}>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 Logout
               </Button>
             </>
@@ -102,7 +122,7 @@ export function SiteHeader() {
                 {user && (
                   <>
                     <Link to="/account" className="px-2 py-1 text-sm">Account</Link>
-                    <Button variant="ghost" size="sm" onClick={signOut} className="justify-start px-2">
+                    <Button variant="ghost" size="sm" onClick={handleSignOut} className="justify-start px-2">
                       Logout
                     </Button>
                   </>

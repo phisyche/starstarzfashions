@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -6,21 +7,21 @@ export function CategoriesSection() {
   const categories = [
     {
       id: 1,
-      name: "Women's Fashion",
-      slug: "womens-fashion",
-      image: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?auto=format&fit=crop&q=80",
-    },
-    {
-      id: 2,
-      name: "Men's Fashion",
-      slug: "mens-fashion",
+      name: "Men",
+      slug: "men",
       image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&q=80",
     },
     {
+      id: 2,
+      name: "Women",
+      slug: "women",
+      image: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?auto=format&fit=crop&q=80",
+    },
+    {
       id: 3,
-      name: "Accessories",
-      slug: "accessories",
-      image: "https://images.unsplash.com/photo-1582142306909-195724d33ffc?auto=format&fit=crop&q=80",
+      name: "Dresses",
+      slug: "dresses",
+      image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&q=80",
     },
     {
       id: 4,
