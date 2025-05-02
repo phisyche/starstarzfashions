@@ -2,66 +2,48 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
-import { products } from "@/data/products";
 import { Link } from "react-router-dom";
-import { Minus, Plus, ShoppingCart, Trash2, ArrowRight } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-
-// Mock cart items for demonstration
-const initialCartItems = [
-  {
-    product: products[0],
-    quantity: 1,
-    size: "M",
-    color: "Black",
-  },
-  {
-    product: products[3],
-    quantity: 2,
-    size: "L",
-    color: "Blue",
-  },
-];
+import { useCart } from "@/context/CartContext";
+import { toast } from "@/components/ui/use-toast";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const { items, removeItem, updateQuantity, subtotal } = useCart();
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   
-  const handleQuantityChange = (index: number, newQuantity: number) => {
+  const handleQuantityChange = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    
-    const updatedCart = [...cartItems];
-    updatedCart[index].quantity = newQuantity;
-    setCartItems(updatedCart);
+    updateQuantity(id, newQuantity);
   };
   
-  const handleRemoveItem = (index: number) => {
-    const updatedCart = cartItems.filter((_, i) => i !== index);
-    setCartItems(updatedCart);
+  const handleRemoveItem = (id: string) => {
+    removeItem(id);
   };
   
   const handleApplyPromo = (e: React.FormEvent) => {
     e.preventDefault();
     if (promoCode.trim() === "KENYA20") {
       setPromoApplied(true);
+      toast({
+        title: "Promo code applied",
+        description: "20% discount has been applied to your order.",
+      });
     } else {
       setPromoApplied(false);
-      alert("Invalid promo code. Try KENYA20 for 20% off.");
+      toast({
+        title: "Invalid promo code",
+        description: "Try KENYA20 for 20% off your order.",
+        variant: "destructive",
+      });
     }
   };
   
   // Calculate totals
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
-  
   const discount = promoApplied ? Math.round(subtotal * 0.2) : 0;
-  const shipping = subtotal > 0 ? 300 : 0; // Free shipping above a certain threshold could be implemented
+  const shipping = subtotal > 0 ? 300 : 0;
   const total = subtotal - discount + shipping;
   
   return (
@@ -76,29 +58,31 @@ export default function CartPage() {
       </div>
 
       <div className="container py-8">
-        {cartItems.length > 0 ? (
+        {items.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg border overflow-hidden">
                 <div className="p-6 border-b">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">Shopping Cart ({cartItems.length})</h2>
-                    <Button variant="ghost" size="sm" className="gap-1 text-gray-600">
-                      <ShoppingCart className="h-4 w-4" />
-                      Continue Shopping
+                    <h2 className="text-xl font-bold">Shopping Cart ({items.length})</h2>
+                    <Button variant="ghost" size="sm" className="gap-1 text-gray-600" asChild>
+                      <Link to="/shop">
+                        <ShoppingCart className="h-4 w-4" />
+                        Continue Shopping
+                      </Link>
                     </Button>
                   </div>
                 </div>
                 
                 <div className="divide-y">
-                  {cartItems.map((item, index) => (
-                    <div key={index} className="p-6 flex flex-col sm:flex-row gap-4">
+                  {items.map((item) => (
+                    <div key={item.id} className="p-6 flex flex-col sm:flex-row gap-4">
                       {/* Product Image */}
                       <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0">
                         <img
-                          src={item.product.image}
-                          alt={item.product.name}
+                          src={item.image}
+                          alt={item.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -107,14 +91,14 @@ export default function CartPage() {
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
                           <div>
-                            <Link to={`/product/${item.product.slug}`} className="font-medium hover:text-primary transition-colors">
-                              {item.product.name}
+                            <Link to={`/product/${item.productId}`} className="font-medium hover:text-primary transition-colors">
+                              {item.name}
                             </Link>
                             <div className="text-sm text-gray-500 mt-1">
-                              Size: {item.size} • Color: {item.color}
+                              {item.size && item.color && `Size: ${item.size} • Color: ${item.color}`}
                             </div>
                             <div className="mt-2">
-                              <Price amount={item.product.price} />
+                              <Price amount={item.price} />
                             </div>
                           </div>
                           
@@ -124,7 +108,7 @@ export default function CartPage() {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => handleQuantityChange(index, item.quantity - 1)}
+                                onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                                 className="h-8 w-8 rounded-l-md rounded-r-none"
                               >
@@ -136,7 +120,7 @@ export default function CartPage() {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => handleQuantityChange(index, item.quantity + 1)}
+                                onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                                 className="h-8 w-8 rounded-r-md rounded-l-none"
                               >
                                 <Plus className="h-3 w-3" />
@@ -147,7 +131,7 @@ export default function CartPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleRemoveItem(index)}
+                              onClick={() => handleRemoveItem(item.id)}
                               className="text-gray-400 hover:text-red-500"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -205,7 +189,7 @@ export default function CartPage() {
                   </div>
                 </div>
                 
-                <Button asChild className="w-full mb-4">
+                <Button asChild className="w-full mb-4" disabled={items.length === 0}>
                   <Link to="/checkout">
                     Proceed to Checkout
                   </Link>
@@ -236,34 +220,6 @@ export default function CartPage() {
             <Button asChild>
               <Link to="/shop">Continue Shopping</Link>
             </Button>
-          </div>
-        )}
-        
-        {/* You might also like */}
-        {cartItems.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">You Might Also Like</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.slice(4, 8).map((product) => (
-                <Link
-                  key={product.id}
-                  to={`/product/${product.slug}`}
-                  className="group"
-                >
-                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <h3 className="font-medium text-sm line-clamp-1 group-hover:text-primary transition-colors">
-                    {product.name}
-                  </h3>
-                  <Price amount={product.price} size="sm" className="mt-1" />
-                </Link>
-              ))}
-            </div>
           </div>
         )}
       </div>

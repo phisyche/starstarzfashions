@@ -41,14 +41,15 @@ export const AddToCart: React.FC<AddToCartProps> = ({
   const handleAddToCart = () => {
     setIsAdding(true);
     
+    // Add item to cart with all required properties
     addItem({
       productId,
       name,
       price,
       image,
       quantity,
-      size,
-      color,
+      size: size || 'M',
+      color: color || 'Default',
     });
     
     toast({
