@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSupabase } from '@/context/SupabaseContext';
@@ -61,19 +62,21 @@ export default function AdminLogin() {
   }, [supabase]);
   
   // If user is already logged in and is admin, redirect to dashboard
-  if (user && isAdmin) {
-    navigate('/admin/dashboard');
-    return null;
-  } else if (user && !isAdmin) {
-    // If user is logged in but not admin, show error
-    toast({
-      title: "Access Denied",
-      description: "You don't have administrator privileges.",
-      variant: "destructive",
-    });
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (user && isAdmin) {
+      console.log("Admin login: User is admin, redirecting to dashboard");
+      navigate('/admin/dashboard');
+    } else if (user && !isAdmin) {
+      // If user is logged in but not admin, show error
+      console.log("Admin login: User is not admin", user?.email);
+      toast({
+        title: "Access Denied",
+        description: "You don't have administrator privileges.",
+        variant: "destructive",
+      });
+      navigate('/');
+    }
+  }, [user, isAdmin, navigate, toast]);
   
   const onSubmit = async (data: FormValues) => {
     try {
@@ -82,10 +85,8 @@ export default function AdminLogin() {
       // Sign in the user
       await signIn(data.email, data.password);
       
-      // Check if user has admin privileges after successful login
-      // isAdmin will be updated in the context automatically
-      
-      // The user will be redirected on the next render if they have admin privileges
+      // The redirect will happen in the useEffect when isAdmin is updated
+      // We don't need to redirect manually here
     } catch (error: any) {
       setError(error.message || "Failed to sign in");
       setIsLoading(false);

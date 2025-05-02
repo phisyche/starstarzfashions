@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient, SupabaseClient, Session } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
@@ -76,13 +77,18 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
         // Check if user is admin
         if (data.session?.user) {
-          const { data: userData } = await supabaseClient
+          const { data: userData, error: profileError } = await supabaseClient
             .from('profiles')
             .select('is_admin')
             .eq('id', data.session.user.id)
             .single();
 
-          setIsAdmin(userData?.is_admin || false);
+          if (profileError) {
+            console.error("Error fetching profile data:", profileError);
+          } else {
+            console.log("Admin status check:", userData?.is_admin);
+            setIsAdmin(userData?.is_admin || false);
+          }
         }
       } catch (error) {
         console.error("Unexpected error during auth initialization:", error);
@@ -96,18 +102,24 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     // Listen for auth changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (_event, session) => {
+        console.log("Auth state changed:", _event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
 
         // Check if user is admin when auth changes
         if (session?.user) {
-          const { data: userData } = await supabaseClient
+          const { data: userData, error: profileError } = await supabaseClient
             .from('profiles')
             .select('is_admin')
             .eq('id', session.user.id)
             .single();
 
-          setIsAdmin(userData?.is_admin || false);
+          if (profileError) {
+            console.error("Error fetching profile data on auth change:", profileError);
+          } else {
+            console.log("Admin status update:", userData?.is_admin);
+            setIsAdmin(userData?.is_admin || false);
+          }
         } else {
           setIsAdmin(false);
         }
@@ -123,6 +135,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
@@ -130,6 +143,22 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
       
       if (error) {
         throw error;
+      }
+      
+      // After successful login, check if the user is an admin
+      if (data.user) {
+        const { data: profileData, error: profileError } = await supabaseClient
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (profileError) {
+          console.error("Error checking admin status:", profileError);
+        } else {
+          console.log("Admin login check:", profileData?.is_admin);
+          setIsAdmin(profileData?.is_admin || false);
+        }
       }
       
       toast({
@@ -145,6 +174,8 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -177,14 +208,23 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   const signOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabaseClient.auth.signOut();
+      
       if (error) {
         throw error;
       }
+      
+      // Clear user data on logout
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      
       toast({
         title: "Signed out",
         description: "You have been signed out successfully.",
       });
+      
       return true;
     } catch (error: any) {
       toast({
@@ -193,6 +233,8 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 

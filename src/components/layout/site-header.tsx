@@ -13,7 +13,7 @@ import {
 import { toast } from '@/components/ui/use-toast';
 
 export function SiteHeader() {
-  const { user, signOut } = useSupabase();
+  const { user, signOut, isAdmin } = useSupabase();
   const { itemCount } = useCart();
   const navigate = useNavigate();
   
@@ -40,6 +40,7 @@ export function SiteHeader() {
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-6 md:gap-10">
           <Link to="/" className="flex items-center space-x-2">
+            <img src="/logo.png" alt="StarStarz" className="h-10 w-auto" />
             <span className="inline-block font-bold text-xl">StarStarz</span>
           </Link>
           
@@ -65,6 +66,13 @@ export function SiteHeader() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              {isAdmin && (
+                <Link to="/admin/dashboard">
+                  <Button variant="outline" size="sm">
+                    Admin
+                  </Button>
+                </Link>
+              )}
               <Link to="/account">
                 <Button variant="ghost" size="icon">
                   <User className="h-5 w-5" />
@@ -93,7 +101,7 @@ export function SiteHeader() {
             <Button variant="ghost" size="icon">
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-theme-pink text-[10px] font-medium text-white">
                   {itemCount > 99 ? '99+' : itemCount}
                 </span>
               )}
@@ -121,6 +129,9 @@ export function SiteHeader() {
                 )}
                 {user && (
                   <>
+                    {isAdmin && (
+                      <Link to="/admin/dashboard" className="px-2 py-1 text-sm">Admin Dashboard</Link>
+                    )}
                     <Link to="/account" className="px-2 py-1 text-sm">Account</Link>
                     <Button variant="ghost" size="sm" onClick={handleSignOut} className="justify-start px-2">
                       Logout

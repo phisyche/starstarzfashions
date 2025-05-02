@@ -33,11 +33,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   
   // Check for admin permissions and authentication
   useEffect(() => {
     const checkAccess = async () => {
+      setIsCheckingAccess(true);
+      
       if (!loading && !user) {
+        console.log("Admin access denied: No user logged in");
         toast({
           title: "Authentication required",
           description: "Please login to access the admin area.",
@@ -46,14 +50,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         return;
       }
       
-      if (!loading && !isAdmin && user) {
+      if (!loading && user && !isAdmin) {
+        console.log("Admin access denied: User is not admin", user.email, isAdmin);
         toast({
           title: "Access denied",
           description: "You don't have permission to access the admin area.",
           variant: "destructive",
         });
         navigate('/');
+        return;
       }
+      
+      setIsCheckingAccess(false);
     };
     
     checkAccess();
@@ -77,7 +85,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (loading || isCheckingAccess) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center space-y-4">
