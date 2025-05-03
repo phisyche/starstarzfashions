@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/layout/main-layout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
-import { GoogleMapComponent } from "@/components/contact/GoogleMap";
+import { GoogleMap } from "@/components/contact/GoogleMap";
 import { Card, CardContent } from "@/components/ui/card";
 
 const formSchema = z.object({
@@ -228,7 +227,7 @@ export default function ContactPage() {
         {/* Map */}
         <div className="mt-12">
           <div className="border rounded-lg overflow-hidden h-[400px]">
-            <GoogleMapComponent />
+            <GoogleMap />
           </div>
         </div>
       </div>

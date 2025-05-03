@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
-import { useLoadScript, GoogleMap, MarkerF } from "@react-google-maps/api";
+import { useLoadScript, GoogleMap as GoogleMapComponent, MarkerF } from "@react-google-maps/api";
 
 const center = { lat: -1.286389, lng: 36.817223 }; // Nairobi coordinates
 
-export function GoogleMapComponent() {
+export function Map() {
   const [apiKey, setApiKey] = useState<string | null>(null);
 
   // Get the API key from environment variables or allow user to enter it
@@ -43,7 +43,7 @@ export function GoogleMapComponent() {
   }
 
   return (
-    <GoogleMap
+    <GoogleMapComponent
       zoom={15}
       center={center}
       mapContainerClassName="w-full h-[400px] rounded-lg"
@@ -55,9 +55,10 @@ export function GoogleMapComponent() {
       }}
     >
       <MarkerF position={center} />
-    </GoogleMap>
+    </GoogleMapComponent>
   );
 }
 
-// Add this named export to match what ContactPage is importing
-export const GoogleMap = GoogleMapComponent;
+// Export named components for external use
+export const GoogleMapComponent = Map;
+export const GoogleMap = Map;
