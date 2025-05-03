@@ -33,14 +33,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   
   // Check for admin permissions and authentication
   useEffect(() => {
     const checkAccess = async () => {
-      setIsCheckingAccess(true);
+      if (loading) {
+        return; // Wait until loading is complete
+      }
       
-      if (!loading && !user) {
+      if (!user) {
         console.log("Admin access denied: No user logged in");
         toast({
           title: "Authentication required",
@@ -50,7 +51,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         return;
       }
       
-      if (!loading && user && !isAdmin) {
+      if (!isAdmin) {
         console.log("Admin access denied: User is not admin", user.email, isAdmin);
         toast({
           title: "Access denied",
@@ -60,8 +61,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         navigate('/');
         return;
       }
-      
-      setIsCheckingAccess(false);
     };
     
     checkAccess();
@@ -85,7 +84,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   // Show loading state while checking authentication
-  if (loading || isCheckingAccess) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center space-y-4">
@@ -98,7 +97,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   if (!user || !isAdmin) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center p-6 max-w-md">
+          <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-6">
+            <h2 className="text-xl font-bold">Access Denied</h2>
+            <p>You do not have permission to access the admin area.</p>
+          </div>
+          <Button onClick={() => navigate('/')} className="mr-2">
+            Return to Home
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/login')}>
+            Sign In
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const isActive = (path: string) => {

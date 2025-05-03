@@ -1,193 +1,318 @@
-
-import { ProductType } from "@/components/products/product-card";
-
-export const products: ProductType[] = [
+// Mocked collections data for display
+export const collections = [
   {
-    id: "1",
-    name: "Floral Print Summer Dress",
-    price: 12500,
-    originalPrice: 15000,
-    image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80",
-    category: "Dresses",
-    isNew: true,
-    isFeatured: true,
-    slug: "floral-print-summer-dress"
+    id: '1',
+    name: 'Summer Collection',
+    slug: 'summer-collection',
+    description: 'Light and breezy pieces perfect for summer days',
+    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
   },
   {
-    id: "2",
-    name: "Classic White Blouse",
-    price: 4500,
-    originalPrice: 6000,
-    image: "https://images.unsplash.com/photo-1551048632-24e444b48a0f?auto=format&fit=crop&q=80",
-    category: "Tops",
-    isFeatured: true,
-    isBestSeller: true,
-    slug: "classic-white-blouse"
+    id: '2',
+    name: 'Winter Essentials',
+    slug: 'winter-essentials',
+    description: 'Stay warm and stylish during the cold months',
+    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
   },
   {
-    id: "3",
-    name: "High-Waist Denim Jeans",
-    price: 3800,
-    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=80",
-    category: "Bottoms",
-    isNew: true,
-    slug: "high-waist-denim-jeans"
+    id: '3',
+    name: 'Formal Attire',
+    slug: 'formal-attire',
+    description: 'Sophisticated pieces for special occasions',
+    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
   },
   {
-    id: "4",
-    name: "Leather Crossbody Bag",
-    price: 8500,
-    originalPrice: 9500,
-    image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80",
-    category: "Accessories",
-    isFeatured: true,
-    isBestSeller: true,
-    slug: "leather-crossbody-bag"
+    id: '4',
+    name: 'Active Wear',
+    slug: 'active-wear',
+    description: 'Performance clothing for your workout routine',
+    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
   },
   {
-    id: "5",
-    name: "Statement Gold Necklace",
-    price: 3200,
-    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80",
-    category: "Jewelry",
-    slug: "statement-gold-necklace"
-  },
-  {
-    id: "6",
-    name: "Pleated Midi Skirt",
-    price: 6500,
-    image: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?auto=format&fit=crop&q=80",
-    category: "Bottoms",
-    slug: "pleated-midi-skirt",
-    isNew: true
-  },
-  {
-    id: "7",
-    name: "Silk Hair Scarf",
-    price: 2500,
-    originalPrice: 3000,
-    image: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&q=80",
-    category: "Accessories",
-    isFeatured: true,
-    slug: "silk-hair-scarf"
-  },
-  {
-    id: "8",
-    name: "Tailored Blazer",
-    price: 15000,
-    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80",
-    category: "Outerwear",
-    isNew: true,
-    slug: "tailored-blazer"
-  },
-  {
-    id: "9",
-    name: "Linen Summer Shirt",
-    price: 5500,
-    image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80",
-    category: "Tops",
-    isNew: true,
-    slug: "linen-summer-shirt"
-  },
-  {
-    id: "10",
-    name: "Floral Maxi Dress",
-    price: 9500,
-    image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&q=80",
-    category: "Dresses",
-    isBestSeller: true,
-    slug: "floral-maxi-dress"
-  },
-  {
-    id: "11",
-    name: "Leather Ankle Boots",
-    price: 18500,
-    originalPrice: 22000,
-    image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80",
-    category: "Shoes",
-    isBestSeller: true,
-    slug: "leather-ankle-boots"
-  },
-  {
-    id: "12",
-    name: "Oversized Knit Sweater",
-    price: 7800,
-    image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&q=80",
-    category: "Tops",
-    isBestSeller: true,
-    slug: "oversized-knit-sweater"
-  },
-];
-
-export const featuredProducts = products.filter(product => product.isFeatured);
-export const newArrivals = products.filter(product => product.isNew);
-export const bestSellers = products.filter(product => product.isBestSeller);
-
-export const categories = [
-  {
-    id: "1",
-    name: "Dresses & Jumpsuits",
-    image: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&q=80",
-    slug: "dresses-jumpsuits"
-  },
-  {
-    id: "2",
-    name: "Tops & Blouses",
-    image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&q=80",
-    slug: "tops-blouses"
-  },
-  {
-    id: "3",
-    name: "Accessories",
-    image: "https://images.unsplash.com/photo-1509319117193-57bab727e09d?auto=format&fit=crop&q=80",
-    slug: "accessories"
-  },
-  {
-    id: "4",
-    name: "Shoes",
-    image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80",
-    slug: "shoes"
-  },
-  {
-    id: "5",
-    name: "Bottoms",
-    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=80",
-    slug: "bottoms"
-  },
-  {
-    id: "6",
-    name: "Outerwear",
-    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80",
-    slug: "outerwear"
-  },
-  {
-    id: "7",
-    name: "Jewelry",
-    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80",
-    slug: "jewelry"
+    id: '5',
+    name: 'Kenyan Heritage',
+    slug: 'kenyan-heritage',
+    description: 'Traditional and modern designs inspired by Kenyan culture',
+    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
   }
 ];
 
-export const collections = [
+// Mocked categories data
+export const categories = [
+  { id: '1', name: 'Men', slug: 'men', image: '/placeholder-category.jpg' },
+  { id: '2', name: 'Women', slug: 'women', image: '/placeholder-category.jpg' },
+  { id: '3', name: 'Dresses', slug: 'dresses', image: '/placeholder-category.jpg' },
+  { id: '4', name: 'Tops', slug: 'tops', image: '/placeholder-category.jpg' },
+  { id: '5', name: 'Trousers', slug: 'trousers', image: '/placeholder-category.jpg' },
+  { id: '6', name: 'Bags', slug: 'bags', image: '/placeholder-category.jpg' },
+  { id: '7', name: 'T-Shirts', slug: 't-shirts', image: '/placeholder-category.jpg' },
+  { id: '8', name: 'Shoes', slug: 'shoes', image: '/placeholder-category.jpg' }
+];
+
+// Helper function to get products by category
+export const getProductsByCategory = (category: string) => {
+  return mockedProducts.filter(product => product.category === category);
+};
+
+// Helper function to get products by collection
+export const getProductsByCollection = (collectionSlug: string) => {
+  // In a real app, this would filter by a collection-product relationship
+  // For now, return some random products
+  return mockedProducts.slice(0, 8);
+};
+
+// Mocked products data
+export const mockedProducts = [
   {
-    id: "1",
-    name: "Summer Essentials",
-    description: "Light, breezy pieces perfect for warm days and balmy nights",
-    image: "https://images.unsplash.com/photo-1523359346063-d879354c0ea5?auto=format&fit=crop&q=80",
-    slug: "summer-essentials"
+    id: '1',
+    name: 'Classic White T-Shirt',
+    slug: 'classic-white-t-shirt',
+    description: 'A comfortable and versatile white t-shirt made from 100% cotton.',
+    price: 1200,
+    category: 'men',
+    image: '/products/tshirt1.jpg',
+    images: [
+      '/products/tshirt1.jpg',
+      '/products/tshirt1-2.jpg',
+      '/products/tshirt1-3.jpg'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['White', 'Black', 'Gray'],
+    isFeatured: true,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 50
   },
   {
-    id: "2",
-    name: "Evening Elegance",
-    description: "Sophisticated designs for special occasions",
-    image: "https://images.unsplash.com/photo-1490725263030-1f0521cec8ec?auto=format&fit=crop&q=80",
-    slug: "evening-elegance"
+    id: '2',
+    name: 'Floral Summer Dress',
+    slug: 'floral-summer-dress',
+    description: 'A beautiful floral dress perfect for summer days.',
+    price: 2500,
+    category: 'women',
+    image: '/products/dress1.jpg',
+    images: [
+      '/products/dress1.jpg',
+      '/products/dress1-2.jpg',
+      '/products/dress1-3.jpg'
+    ],
+    sizes: ['XS', 'S', 'M', 'L'],
+    colors: ['Blue', 'Pink'],
+    isFeatured: true,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 30
   },
   {
-    id: "3",
-    name: "Urban Classics",
-    description: "Timeless pieces for the modern wardrobe",
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80",
-    slug: "urban-classics"
+    id: '3',
+    name: 'Leather Crossbody Bag',
+    slug: 'leather-crossbody-bag',
+    description: 'A stylish leather crossbody bag with multiple compartments.',
+    price: 3500,
+    category: 'bags',
+    image: '/products/bag1.jpg',
+    images: [
+      '/products/bag1.jpg',
+      '/products/bag1-2.jpg',
+      '/products/bag1-3.jpg'
+    ],
+    sizes: ['One Size'],
+    colors: ['Brown', 'Black'],
+    isFeatured: false,
+    isNew: false,
+    isSale: true,
+    discountPercent: 15,
+    stock: 20
+  },
+  {
+    id: '4',
+    name: 'Slim Fit Jeans',
+    slug: 'slim-fit-jeans',
+    description: 'Comfortable slim fit jeans made from high-quality denim.',
+    price: 2800,
+    category: 'men',
+    image: '/products/jeans1.jpg',
+    images: [
+      '/products/jeans1.jpg',
+      '/products/jeans1-2.jpg',
+      '/products/jeans1-3.jpg'
+    ],
+    sizes: ['30', '32', '34', '36'],
+    colors: ['Blue', 'Black'],
+    isFeatured: false,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 40
+  },
+  {
+    id: '5',
+    name: 'Running Shoes',
+    slug: 'running-shoes',
+    description: 'Lightweight and comfortable running shoes with excellent support.',
+    price: 4500,
+    category: 'shoes',
+    image: '/products/shoes1.jpg',
+    images: [
+      '/products/shoes1.jpg',
+      '/products/shoes1-2.jpg',
+      '/products/shoes1-3.jpg'
+    ],
+    sizes: ['40', '41', '42', '43', '44'],
+    colors: ['Black/Red', 'Blue/White', 'Gray/Green'],
+    isFeatured: true,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 25
+  },
+  {
+    id: '6',
+    name: 'Casual Blouse',
+    slug: 'casual-blouse',
+    description: 'A lightweight and comfortable blouse for everyday wear.',
+    price: 1800,
+    category: 'tops',
+    image: '/products/blouse1.jpg',
+    images: [
+      '/products/blouse1.jpg',
+      '/products/blouse1-2.jpg',
+      '/products/blouse1-3.jpg'
+    ],
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    colors: ['White', 'Blue', 'Pink'],
+    isFeatured: false,
+    isNew: false,
+    isSale: true,
+    discountPercent: 20,
+    stock: 35
+  },
+  {
+    id: '7',
+    name: 'Formal Suit',
+    slug: 'formal-suit',
+    description: 'A classic formal suit for business and special occasions.',
+    price: 12000,
+    category: 'men',
+    image: '/products/suit1.jpg',
+    images: [
+      '/products/suit1.jpg',
+      '/products/suit1-2.jpg',
+      '/products/suit1-3.jpg'
+    ],
+    sizes: ['48', '50', '52', '54'],
+    colors: ['Black', 'Navy', 'Gray'],
+    isFeatured: true,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 15
+  },
+  {
+    id: '8',
+    name: 'Evening Gown',
+    slug: 'evening-gown',
+    description: 'An elegant evening gown for formal events and celebrations.',
+    price: 15000,
+    category: 'dresses',
+    image: '/products/gown1.jpg',
+    images: [
+      '/products/gown1.jpg',
+      '/products/gown1-2.jpg',
+      '/products/gown1-3.jpg'
+    ],
+    sizes: ['XS', 'S', 'M', 'L'],
+    colors: ['Red', 'Black', 'Gold'],
+    isFeatured: true,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 10
+  },
+  {
+    id: '9',
+    name: 'Casual Chinos',
+    slug: 'casual-chinos',
+    description: 'Comfortable and stylish chinos for a casual look.',
+    price: 2200,
+    category: 'trousers',
+    image: '/products/chinos1.jpg',
+    images: [
+      '/products/chinos1.jpg',
+      '/products/chinos1-2.jpg',
+      '/products/chinos1-3.jpg'
+    ],
+    sizes: ['30', '32', '34', '36', '38'],
+    colors: ['Beige', 'Navy', 'Olive'],
+    isFeatured: false,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 30
+  },
+  {
+    id: '10',
+    name: 'Tote Bag',
+    slug: 'tote-bag',
+    description: 'A spacious and durable tote bag for everyday use.',
+    price: 1800,
+    category: 'bags',
+    image: '/products/tote1.jpg',
+    images: [
+      '/products/tote1.jpg',
+      '/products/tote1-2.jpg',
+      '/products/tote1-3.jpg'
+    ],
+    sizes: ['One Size'],
+    colors: ['Black', 'Brown', 'Canvas'],
+    isFeatured: false,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 25
+  },
+  {
+    id: '11',
+    name: 'Graphic T-Shirt',
+    slug: 'graphic-t-shirt',
+    description: 'A cool graphic t-shirt with unique design.',
+    price: 1500,
+    category: 't-shirts',
+    image: '/products/graphic-tee1.jpg',
+    images: [
+      '/products/graphic-tee1.jpg',
+      '/products/graphic-tee1-2.jpg',
+      '/products/graphic-tee1-3.jpg'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['White', 'Black', 'Gray'],
+    isFeatured: false,
+    isNew: false,
+    isSale: true,
+    discountPercent: 10,
+    stock: 40
+  },
+  {
+    id: '12',
+    name: 'Ankle Boots',
+    slug: 'ankle-boots',
+    description: 'Stylish ankle boots that go with any outfit.',
+    price: 3800,
+    category: 'shoes',
+    image: '/products/boots1.jpg',
+    images: [
+      '/products/boots1.jpg',
+      '/products/boots1-2.jpg',
+      '/products/boots1-3.jpg'
+    ],
+    sizes: ['36', '37', '38', '39', '40'],
+    colors: ['Black', 'Brown', 'Tan'],
+    isFeatured: true,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 20
   }
 ];

@@ -1,337 +1,334 @@
 
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/main-layout";
 import { ProductCard } from "@/components/products/product-card";
-import { products } from "@/data/products";
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useSupabase } from "@/context/SupabaseContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Filter, SlidersHorizontal, Search, Grid3X3, List } from "lucide-react";
+import { from } from "@/integrations/supabase/client";
 
 export default function Shop() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSort, setSelectedSort] = useState("featured");
-  const [priceRange, setPriceRange] = useState([0, 5000]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const { supabase } = useSupabase();
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // Fetch categories from Supabase
+  const categoryParam = searchParams.get("category") || "";
+  const searchQuery = searchParams.get("search") || "";
+  
+  // Fetch products and categories
   useEffect(() => {
-    const fetchCategories = async () => {
-      if (!supabase) return;
-      
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('categories')
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await from('categories')
           .select('*')
           .order('sort_order', { ascending: true });
           
-        if (error) throw error;
+        if (categoriesError) throw categoriesError;
+        setCategories(categoriesData || []);
         
-        if (data) {
-          setCategories(data);
+        // Fetch products with filtering
+        let query = from('products').select('*');
+        
+        if (categoryParam) {
+          query = query.eq('category', categoryParam);
         }
+        
+        if (searchQuery) {
+          query = query.ilike('name', `%${searchQuery}%`);
+        }
+        
+        const { data: productsData, error: productsError } = await query;
+        
+        if (productsError) throw productsError;
+        setProducts(productsData || []);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching shop data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    fetchCategories();
-  }, [supabase]);
+    fetchData();
+  }, [categoryParam, searchQuery]);
 
-  // Implement filtering
-  const filteredProducts = products.filter((product) => {
-    // Filter by search query
-    const matchesSearch = searchQuery 
-      ? product.name.toLowerCase().includes(searchQuery.toLowerCase()) 
-      : true;
-    
-    // Filter by category
-    const matchesCategory = selectedCategory 
-      ? product.category.toLowerCase() === selectedCategory.toLowerCase() 
-      : true;
-    
-    // Filter by price range
-    const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-    
-    return matchesSearch && matchesCategory && matchesPrice;
-  });
-
-  // Implement sorting
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (selectedSort) {
-      case "price-low-high":
-        return a.price - b.price;
-      case "price-high-low":
-        return b.price - a.price;
-      case "newest":
-        return a.isNew ? -1 : b.isNew ? 1 : 0;
-      default:
-        return a.isFeatured ? -1 : b.isFeatured ? 1 : 0;
+  const toggleCategory = (slug: string) => {
+    if (categoryParam === slug) {
+      // Remove category filter
+      searchParams.delete("category");
+    } else {
+      // Set category filter
+      searchParams.set("category", slug);
     }
-  });
+    setSearchParams(searchParams);
+  };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Search is already applied through the state
+    const formData = new FormData(e.currentTarget);
+    const search = formData.get("search") as string;
+    if (search) {
+      searchParams.set("search", search);
+    } else {
+      searchParams.delete("search");
+    }
+    setSearchParams(searchParams);
   };
 
-  const handleCategoryChange = (category: string | null) => {
-    setSelectedCategory(category);
-  };
-
-  const handleSortChange = (value: string) => {
-    setSelectedSort(value);
-  };
-
-  const handlePriceChange = (value: number[]) => {
-    setPriceRange(value);
-  };
-
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedCategory(null);
-    setPriceRange([0, 5000]);
-    setSelectedSort("featured");
+  const clearFilters = () => {
+    setSearchParams({});
   };
 
   return (
     <MainLayout>
-      <div className="bg-gray-50 py-8">
-        <div className="container">
-          <h1 className="text-3xl font-bold mb-2">Shop All Products</h1>
-          <div className="text-gray-600">
-            Discover our unique collection of authentic Kenyan fashion
+      <div className="container py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Shop Our Collection</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              className={viewMode === "grid" ? "bg-muted" : ""}
+            >
+              <Grid3X3 className="h-4 w-4" />
+              <span className="sr-only">Grid view</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("list")}
+              className={viewMode === "list" ? "bg-muted" : ""}
+            >
+              <List className="h-4 w-4" />
+              <span className="sr-only">List view</span>
+            </Button>
+            <Button
+              variant={filtersOpen ? "secondary" : "outline"}
+              size="sm"
+              className="md:hidden"
+              onClick={() => setFiltersOpen(!filtersOpen)}
+            >
+              <Filter className="h-4 w-4 mr-2" /> Filters
+            </Button>
           </div>
         </div>
-      </div>
 
-      <div className="container py-8">
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Filters - Desktop */}
-          <div className="w-full md:w-64 hidden md:block">
-            <div className="bg-white rounded-lg border p-4 sticky top-24">
-              <div className="mb-6">
-                <h3 className="font-medium text-lg mb-3">Categories</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Button 
-                      variant={selectedCategory === null ? "default" : "ghost"} 
-                      size="sm"
-                      onClick={() => handleCategoryChange(null)}
-                    >
-                      All Products
-                    </Button>
-                  </div>
-                  {categories.map((category) => (
-                    <div key={category.id} className="flex items-center">
-                      <Button 
-                        variant={selectedCategory === category.name ? "default" : "ghost"} 
-                        size="sm"
-                        onClick={() => handleCategoryChange(category.name)}
-                      >
-                        {category.name}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-medium text-lg mb-3">Price Range</h3>
-                <div className="space-y-4">
-                  <Slider
-                    value={priceRange}
-                    min={0}
-                    max={5000}
-                    step={100}
-                    onValueChange={handlePriceChange}
+          {/* Sidebar/Filters */}
+          <aside
+            className={`w-full md:w-64 shrink-0 transition-all ${
+              filtersOpen ? "block" : "hidden md:block"
+            }`}
+          >
+            <div className="sticky top-24 space-y-6">
+              <div>
+                <h2 className="font-semibold text-lg mb-2">Search</h2>
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <Input
+                    name="search"
+                    placeholder="Search products..."
+                    defaultValue={searchQuery}
+                    className="flex-1"
                   />
-                  <div className="flex items-center justify-between">
-                    <span>KES {priceRange[0]}</span>
-                    <span>KES {priceRange[1]}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-medium text-lg mb-3">Product Features</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="new-arrivals" />
-                    <Label htmlFor="new-arrivals">New Arrivals</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="sale" />
-                    <Label htmlFor="sale">On Sale</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="featured" />
-                    <Label htmlFor="featured">Featured</Label>
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={handleClearFilters}
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile Filters */}
-          <Sheet>
-            <SheetTrigger asChild className="md:hidden mb-4">
-              <Button variant="outline" className="gap-2">
-                <SlidersHorizontal className="h-4 w-4" /> Filters
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
-              
-              <div className="py-4">
-                <div className="mb-6">
-                  <h3 className="font-medium text-lg mb-3">Categories</h3>
-                  <div className="space-y-2">
-                    <SheetClose asChild>
-                      <Button 
-                        variant={selectedCategory === null ? "default" : "ghost"} 
-                        size="sm"
-                        onClick={() => handleCategoryChange(null)}
-                        className="w-full justify-start"
-                      >
-                        All Products
-                      </Button>
-                    </SheetClose>
-                    {categories.map((category) => (
-                      <SheetClose key={category.id} asChild>
-                        <Button 
-                          variant={selectedCategory === category.name ? "default" : "ghost"} 
-                          size="sm"
-                          onClick={() => handleCategoryChange(category.name)}
-                          className="w-full justify-start"
-                        >
-                          {category.name}
-                        </Button>
-                      </SheetClose>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="font-medium text-lg mb-3">Price Range</h3>
-                  <div className="space-y-4">
-                    <Slider
-                      value={priceRange}
-                      min={0}
-                      max={5000}
-                      step={100}
-                      onValueChange={handlePriceChange}
-                    />
-                    <div className="flex items-center justify-between">
-                      <span>KES {priceRange[0]}</span>
-                      <span>KES {priceRange[1]}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="font-medium text-lg mb-3">Product Features</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="mobile-new-arrivals" />
-                      <Label htmlFor="mobile-new-arrivals">New Arrivals</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="mobile-sale" />
-                      <Label htmlFor="mobile-sale">On Sale</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="mobile-featured" />
-                      <Label htmlFor="mobile-featured">Featured</Label>
-                    </div>
-                  </div>
-                </div>
-
-                <SheetClose asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-2"
-                    onClick={handleClearFilters}
-                  >
-                    Clear Filters
+                  <Button type="submit" size="icon" variant="secondary">
+                    <Search className="h-4 w-4" />
                   </Button>
-                </SheetClose>
+                </form>
               </div>
-            </SheetContent>
-          </Sheet>
 
-          <div className="flex-1">
-            {/* Search and Sort Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <form onSubmit={handleSearch} className="relative w-full sm:max-w-sm">
-                <Input
-                  type="search"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10"
-                />
-                <Button 
-                  type="submit" 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-0 top-0"
+              <div>
+                <h2 className="font-semibold text-lg mb-2">Categories</h2>
+                <ul className="space-y-1">
+                  {loading ? (
+                    Array(8)
+                      .fill(0)
+                      .map((_, i) => (
+                        <li key={i} className="mb-2">
+                          <Skeleton className="h-6 w-full" />
+                        </li>
+                      ))
+                  ) : (
+                    <>
+                      {categories.map((category) => (
+                        <li key={category.id}>
+                          <Button
+                            variant={categoryParam === category.slug ? "secondary" : "ghost"}
+                            className="justify-start w-full font-normal"
+                            onClick={() => toggleCategory(category.slug)}
+                          >
+                            {category.name}
+                          </Button>
+                        </li>
+                      ))}
+                    </>
+                  )}
+                </ul>
+              </div>
+
+              <Accordion type="single" collapsible defaultValue="prices">
+                <AccordionItem value="prices">
+                  <AccordionTrigger className="font-semibold text-lg">
+                    Price Range
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4 mt-2">
+                      {["Under KES 1,000", "KES 1,000 - 2,500", "KES 2,500 - 5,000", "Over KES 5,000"].map(
+                        (range) => (
+                          <div key={range} className="flex items-center space-x-2">
+                            <Checkbox id={`price-${range}`} />
+                            <Label htmlFor={`price-${range}`}>{range}</Label>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="sizes">
+                  <AccordionTrigger className="font-semibold text-lg">
+                    Sizes
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4 mt-2">
+                      {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
+                        <div key={size} className="flex items-center space-x-2">
+                          <Checkbox id={`size-${size}`} />
+                          <Label htmlFor={`size-${size}`}>{size}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+
+              {(categoryParam || searchQuery) && (
+                <Button
+                  onClick={clearFilters}
+                  variant="outline"
+                  className="w-full border-dashed mt-4"
                 >
-                  <Search className="h-4 w-4" />
+                  Clear All Filters
                 </Button>
-              </form>
-              
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-sm text-gray-600 whitespace-nowrap">Sort by:</span>
-                <Select value={selectedSort} onValueChange={handleSortChange}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="featured">Featured</SelectItem>
-                    <SelectItem value="newest">New Arrivals</SelectItem>
-                    <SelectItem value="price-low-high">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high-low">Price: High to Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              )}
 
-            {/* Product Results */}
-            <div>
-              <div className="text-sm text-gray-600 mb-4">
-                Showing {sortedProducts.length} products
+              <Button
+                className="w-full md:hidden mt-4"
+                onClick={() => setFiltersOpen(false)}
+                variant="secondary"
+              >
+                Apply Filters
+              </Button>
+            </div>
+          </aside>
+
+          {/* Product Grid */}
+          <div className="flex-1">
+            {/* Active filters */}
+            {(categoryParam || searchQuery) && (
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <span className="text-sm font-medium">Active Filters:</span>
+                {categoryParam && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 text-xs rounded-full"
+                    onClick={() => toggleCategory(categoryParam)}
+                  >
+                    Category: {categories.find(c => c.slug === categoryParam)?.name || categoryParam}
+                    <span className="ml-1">×</span>
+                  </Button>
+                )}
+                {searchQuery && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 text-xs rounded-full"
+                    onClick={() => {
+                      searchParams.delete("search");
+                      setSearchParams(searchParams);
+                    }}
+                  >
+                    Search: {searchQuery}
+                    <span className="ml-1">×</span>
+                  </Button>
+                )}
               </div>
-              
-              {sortedProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {sortedProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
+            )}
+
+            {/* Results */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-muted-foreground">
+                  {loading
+                    ? "Loading products..."
+                    : `Showing ${products.length} product${
+                        products.length === 1 ? "" : "s"
+                      }`}
+                </div>
+                <div>
+                  <Button variant="ghost" size="sm" className="text-sm">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" /> Sort by
+                  </Button>
+                </div>
+              </div>
+
+              {loading ? (
+                <div
+                  className={`grid gap-6 ${
+                    viewMode === "grid"
+                      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                      : "grid-cols-1"
+                  }`}
+                >
+                  {Array(8)
+                    .fill(0)
+                    .map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="w-full aspect-square rounded-md" />
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    ))}
+                </div>
+              ) : products.length === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                    <Search className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium">No products found</h3>
+                  <p className="text-muted-foreground">
+                    Try changing your filters or search term
+                  </p>
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <h3 className="text-xl font-medium mb-2">No products found</h3>
-                  <p className="text-gray-600 mb-4">Try changing your filters or search term</p>
-                  <Button onClick={handleClearFilters}>Clear Filters</Button>
+                <div
+                  className={`grid gap-6 ${
+                    viewMode === "grid"
+                      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                      : "grid-cols-1"
+                  }`}
+                >
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      layout={viewMode}
+                    />
+                  ))}
                 </div>
               )}
             </div>

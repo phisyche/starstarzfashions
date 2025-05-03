@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { Minus, Plus, ShoppingCart, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { getImagePath } from '@/utils/image-utils';
 
 interface AddToCartProps {
   productId: string;
@@ -42,11 +43,14 @@ export const AddToCart: React.FC<AddToCartProps> = ({
     setIsAdding(true);
     
     try {
+      // Process the image path to ensure it's correct
+      const processedImage = getImagePath(image);
+      
       addItem({
         productId,
         name,
         price,
-        image,
+        image: processedImage,
         quantity,
         size: size || 'M',
         color: color || 'Default',

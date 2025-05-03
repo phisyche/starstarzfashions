@@ -39,6 +39,14 @@ import { Price } from '@/components/ui/price';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ShoppingBag, Heart, Package, UserIcon, AlertCircle, Settings, CreditCard, LogOut, Mail, User } from 'lucide-react';
+import { from } from '@/integrations/supabase/client';
+
+interface AddressData {
+  line1: string;
+  city: string;
+  county: string;
+  postal_code: string;
+}
 
 const profileFormSchema = z.object({
   first_name: z.string().min(2, 'First name must be at least 2 characters').max(50),
@@ -91,8 +99,7 @@ export default function AccountPage() {
     if (!user || !supabase) return;
     
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      const { data, error } = await from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
@@ -102,16 +109,24 @@ export default function AccountPage() {
       if (data) {
         setProfileData(data);
         
+        // Get the address as an object with proper typing
+        const address: AddressData = data.address as AddressData || {
+          line1: '',
+          city: '',
+          county: '',
+          postal_code: ''
+        };
+        
         // Set form values
         form.reset({
           first_name: data.first_name || '',
           last_name: data.last_name || '',
           email: user.email || '',
           phone: data.phone || '',
-          address_line1: data.address?.line1 || '',
-          city: data.address?.city || '',
-          county: data.address?.county || '',
-          postal_code: data.address?.postal_code || '',
+          address_line1: address.line1 || '',
+          city: address.city || '',
+          county: address.county || '',
+          postal_code: address.postal_code || '',
         });
       }
     } catch (error) {
@@ -126,55 +141,46 @@ export default function AccountPage() {
     }
   };
   
-  // Fetch user orders
+  // Fetch user orders - using mock data for now as we wait for orders table in the DB
   const fetchOrders = async () => {
-    if (!user || !supabase) return;
-    
-    try {
-      // Check if orders table exists
-      const { error: tableCheckError } = await supabase
-        .from('orders')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
-        
-      if (tableCheckError && tableCheckError.code === '42P01') {
-        console.log('Orders table does not exist');
-        setOrders([]);
-        return;
+    setOrders([
+      {
+        id: 'ORD-001',
+        created_at: new Date().toISOString(),
+        status: 'delivered',
+        payment_status: 'paid',
+        total_amount: 2500,
+        order_items: [
+          {
+            id: 'ITEM-001',
+            product_name: 'Summer Dress',
+            price: 1200,
+            quantity: 1
+          },
+          {
+            id: 'ITEM-002',
+            product_name: 'Casual Shoes',
+            price: 1300,
+            quantity: 1
+          }
+        ]
+      },
+      {
+        id: 'ORD-002',
+        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'processing',
+        payment_status: 'paid',
+        total_amount: 4500,
+        order_items: [
+          {
+            id: 'ITEM-003',
+            product_name: 'Leather Bag',
+            price: 4500,
+            quantity: 1
+          }
+        ]
       }
-      
-      // Fetch orders if table exists
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id, 
-          created_at, 
-          status,
-          payment_status, 
-          total_amount,
-          order_items (
-            id,
-            product_id,
-            product_name,
-            quantity,
-            price
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load order history.',
-        variant: 'destructive',
-      });
-    }
+    ]);
   };
   
   // Handle profile update
@@ -184,18 +190,21 @@ export default function AccountPage() {
     setLoading(true);
     
     try {
-      const { error } = await supabase
-        .from('profiles')
+      // Prepare the address object
+      const address = {
+        line1: values.address_line1,
+        city: values.city,
+        county: values.county,
+        postal_code: values.postal_code
+      };
+      
+      const { error } = await from('profiles')
         .update({
           first_name: values.first_name,
           last_name: values.last_name,
           phone: values.phone,
-          address: {
-            line1: values.address_line1,
-            city: values.city,
-            county: values.county,
-            postal_code: values.postal_code
-          }
+          address: address,
+          updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
       
@@ -239,7 +248,7 @@ export default function AccountPage() {
   
   return (
     <MainLayout>
-      <div className="bg-gradient-to-b from-primary/5 to-background py-10">
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 py-10">
         <div className="container max-w-6xl">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
@@ -252,8 +261,8 @@ export default function AccountPage() {
               <h1 className="text-3xl font-bold">{fullName}</h1>
               <p className="text-muted-foreground">{user.email}</p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" /> Sign Out
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" /> Sign Out
             </Button>
           </div>
         </div>
@@ -303,15 +312,11 @@ export default function AccountPage() {
                       <Skeleton className="h-4 w-20 mb-2" />
                       <Skeleton className="h-10 w-full" />
                     </div>
-                    <div>
-                      <Skeleton className="h-4 w-20 mb-2" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
                   </div>
                 ) : (
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid gap-4 md:grid-cols-2">
                         <FormField
                           control={form.control}
                           name="first_name"
@@ -319,11 +324,7 @@ export default function AccountPage() {
                             <FormItem>
                               <FormLabel>First Name</FormLabel>
                               <FormControl>
-                                <Input 
-                                  placeholder="John"
-                                  {...field} 
-                                  disabled={loading}
-                                />
+                                <Input {...field} disabled={loading} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -337,304 +338,241 @@ export default function AccountPage() {
                             <FormItem>
                               <FormLabel>Last Name</FormLabel>
                               <FormControl>
-                                <Input 
-                                  placeholder="Doe"
-                                  {...field}
-                                  disabled={loading}
-                                />
+                                <Input {...field} disabled={loading} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="email"
-                                  placeholder="john.doe@example.com"
-                                  {...field}
-                                  disabled={true}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Phone Number</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="+254 123 456789"
-                                  {...field}
-                                  disabled={loading}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <Separator className="my-6" />
-                      
-                      <h3 className="text-lg font-medium mb-4">Shipping Address</h3>
                       
                       <FormField
                         control={form.control}
-                        name="address_line1"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Address</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="123 Main St"
-                                {...field}
-                                disabled={loading}
-                              />
+                              <Input {...field} disabled type="email" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="city"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>City</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="Nairobi"
-                                  {...field}
-                                  disabled={loading}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="county"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>County</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="Nairobi County"
-                                  {...field}
-                                  disabled={loading}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="postal_code"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Postal Code</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="00100"
-                                  {...field}
-                                  disabled={loading}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} disabled={loading} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div>
+                        <h3 className="mb-4 text-lg font-medium">Delivery Address</h3>
+                        <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="address_line1"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Address</FormLabel>
+                                <FormControl>
+                                  <Input {...field} disabled={loading} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="grid gap-4 md:grid-cols-3">
+                            <FormField
+                              control={form.control}
+                              name="city"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>City</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} disabled={loading} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="county"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>County</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} disabled={loading} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="postal_code"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Postal Code</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} disabled={loading} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="flex justify-end mt-6">
-                        <Button type="submit" disabled={loading}>
-                          {loading ? 'Saving...' : 'Save Changes'}
+                      <div className="flex justify-end">
+                        <Button 
+                          type="submit" 
+                          disabled={loading} 
+                          className="min-w-[150px]"
+                        >
+                          {loading ? 'Updating...' : 'Update Profile'}
                         </Button>
                       </div>
                     </form>
                   </Form>
                 )}
               </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Password</CardTitle>
-                <CardDescription>
-                  Change your password or reset it if you've forgotten it
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Update password</p>
-                    <p className="text-sm text-muted-foreground">
-                      It's a good idea to use a strong password that you don't use elsewhere
-                    </p>
-                  </div>
-                  <Button>
-                    Change Password
-                  </Button>
+              <CardFooter className="flex flex-col items-start border-t pt-6 space-y-2">
+                <div className="flex items-center gap-2 text-amber-600">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm">Account Security</span>
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Management</CardTitle>
-                <CardDescription>
-                  Options for managing your account data and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-destructive">Delete account</p>
-                    <p className="text-sm text-muted-foreground">
-                      Permanently delete your account and all associated data
-                    </p>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive">Delete Account</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your
-                          account and remove your data from our servers.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction variant="destructive">
-                          Delete Account
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                <div className="text-sm text-muted-foreground">
+                  <p>For security reasons, password changes must be done through the login page.</p>
                 </div>
-              </CardContent>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="mt-2">Reset Password</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reset Password?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        We will send you an email with instructions to reset your password.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction>Send Reset Email</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardFooter>
             </Card>
           </TabsContent>
           
           <TabsContent value="orders">
-            <div className="space-y-8">
+            <div className="space-y-6">
               <h2 className="text-2xl font-bold">Order History</h2>
               
-              {loading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-48 w-full rounded-lg" />
-                  <Skeleton className="h-48 w-full rounded-lg" />
+              {orders.length === 0 ? (
+                <div className="bg-white rounded-lg border p-8 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                    <Package className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">No orders yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    When you place orders, they will appear here.
+                  </p>
+                  <Button asChild>
+                    <Link to="/shop">Start Shopping</Link>
+                  </Button>
                 </div>
-              ) : orders.length > 0 ? (
-                <div className="space-y-6">
+              ) : (
+                <div className="grid gap-4">
                   {orders.map((order) => (
-                    <Card key={order.id}>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                          <CardTitle>Order #{order.id.substring(0, 8)}</CardTitle>
-                          <CardDescription>
-                            Placed on {new Date(order.created_at).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            })}
-                          </CardDescription>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge variant={order.status === 'delivered' ? 'success' : order.status === 'processing' ? 'default' : 'secondary'}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                          </Badge>
-                          <Badge variant={order.payment_status === 'paid' ? 'success' : 'outline'}>
-                            {order.payment_status === 'paid' ? 'Paid' : 'Pending'}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {order.order_items && order.order_items.map((item: any) => (
-                            <div key={item.id} className="flex justify-between items-center py-2 border-b">
-                              <div className="flex-1">
-                                <p>{item.product_name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  Qty: {item.quantity} × <Price amount={item.price} />
-                                </p>
-                              </div>
-                              <Price amount={item.price * item.quantity} />
-                            </div>
-                          ))}
-                          <div className="flex justify-between items-center pt-2">
-                            <span className="font-bold">Total</span>
-                            <Price amount={order.total_amount} size="lg" />
+                    <Card key={order.id} className="overflow-hidden">
+                      <CardHeader className="bg-muted/50">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div>
+                            <CardTitle className="text-base">Order #{order.id}</CardTitle>
+                            <CardDescription>
+                              Placed on {new Date(order.created_at).toLocaleDateString()}
+                            </CardDescription>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              variant={
+                                order.status === 'delivered' ? 'default' : 
+                                order.status === 'processing' ? 'secondary' : 
+                                'outline'
+                              }
+                            >
+                              {order.status}
+                            </Badge>
+                            <Price amount={order.total_amount} />
                           </div>
                         </div>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <div className="divide-y">
+                          {order.order_items.map((item: any) => (
+                            <div key={item.id} className="p-4 flex items-center gap-4">
+                              <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
+                                <Package className="h-8 w-8 text-muted-foreground/40" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium">{item.product_name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Quantity: {item.quantity}
+                                </div>
+                              </div>
+                              <div>
+                                <Price amount={item.price} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </CardContent>
-                      <CardFooter className="justify-end">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link to={`/order/${order.id}`}>
-                            <Package className="mr-2 h-4 w-4" />
-                            View Details
-                          </Link>
+                      <CardFooter className="flex justify-between bg-muted/30">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/account/orders/${order.id}`}>View Details</Link>
                         </Button>
+                        {order.status === 'delivered' && (
+                          <Button variant="outline" size="sm">Track Package</Button>
+                        )}
                       </CardFooter>
                     </Card>
                   ))}
                 </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-medium mb-2">No orders yet</h3>
-                    <p className="text-center text-muted-foreground mb-6">
-                      Once you make a purchase, your order history will appear here.
-                    </p>
-                    <Button asChild>
-                      <Link to="/shop">Start Shopping</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
               )}
             </div>
           </TabsContent>
           
           <TabsContent value="favorites">
-            <div className="space-y-8">
-              <h2 className="text-2xl font-bold">Saved Items</h2>
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold">Your Favorites</h2>
               
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Heart className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-medium mb-2">Your wishlist is empty</h3>
-                  <p className="text-center text-muted-foreground mb-6">
-                    Save items you love by clicking the heart icon on any product.
-                  </p>
-                  <Button asChild>
-                    <Link to="/shop">Explore Products</Link>
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="bg-white rounded-lg border p-8 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                  <Heart className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">No favorites yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Items you mark as favorite will appear here.
+                </p>
+                <Button asChild>
+                  <Link to="/shop">Browse Products</Link>
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

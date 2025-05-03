@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ChevronLeft, Home } from 'lucide-react';
+import { from } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,10 +22,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function AdminLogin() {
-  const { signIn, user, isAdmin, supabase } = useSupabase();
+  const { signIn, user, isAdmin } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dbChecked, setDbChecked] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -36,86 +36,13 @@ export default function AdminLogin() {
     },
   });
   
-  // Force re-check admin status for specific emails that should have admin access
-  useEffect(() => {
-    const checkAdminUsers = async () => {
-      if (!supabase || !user) return;
-      
-      // Check if the current user is one of our known admin emails
-      const isKnownAdmin = 
-        user.email === 'phisyche@gmail.com' ||
-        user.email === 'admin@starstarzfashions.com' ||
-        user.email === 'orpheuscrypt@gmail.com' ||
-        (user.email && user.email.endsWith('@starstarzfashions.com'));
-      
-      if (isKnownAdmin) {
-        console.log("This user should be an admin, ensuring admin status:", user.email);
-        
-        // Force update the admin status in the profiles table
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .update({ is_admin: true })
-            .eq('id', user.id);
-            
-          if (error) {
-            console.error("Error updating admin status:", error);
-          } else {
-            console.log("Admin status updated successfully");
-          }
-        } catch (err) {
-          console.error("Error in admin update:", err);
-        }
-      }
-    };
-    
-    checkAdminUsers();
-  }, [user, supabase]);
-  
   // If user is already logged in and is admin, redirect to dashboard
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) return;
-      
-      try {
-        console.log("Checking admin status for:", user.email);
-        // Do a fresh check of admin status from the database
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .maybeSingle();
-          
-        if (error) {
-          console.error("Error checking admin status:", error);
-          return;
-        }
-        
-        const userIsAdmin = data?.is_admin || false;
-        console.log("Admin status result:", userIsAdmin);
-        
-        if (userIsAdmin) {
-          console.log("User is admin, redirecting to dashboard");
-          navigate('/admin/dashboard');
-        } else if (user) {
-          // If user is logged in but not admin, show error
-          console.log("User is not admin:", user.email);
-          toast({
-            title: "Access Denied",
-            description: "You don't have administrator privileges.",
-            variant: "destructive",
-          });
-          navigate('/');
-        }
-      } catch (error) {
-        console.error("Error checking admin status:", error);
-      }
-    };
-    
-    if (user) {
-      checkAdminStatus();
+    if (user && isAdmin) {
+      console.log("User is admin, redirecting to dashboard", user.email);
+      navigate('/admin/dashboard');
     }
-  }, [user, navigate, toast, supabase, isAdmin]);
+  }, [user, navigate, isAdmin]);
   
   const onSubmit = async (data: FormValues) => {
     try {
@@ -127,6 +54,7 @@ export default function AdminLogin() {
       
       // The redirect will happen in the useEffect when isAdmin is updated
     } catch (error: any) {
+      console.error("Login error:", error);
       setError(error.message || "Failed to sign in");
     } finally {
       setIsLoading(false);

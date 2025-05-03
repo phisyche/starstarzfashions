@@ -16,26 +16,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
+import { from } from '@/integrations/supabase/client';
 
 // Chart imports
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Legend
 } from 'recharts';
 
 export default function AdminDashboard() {
-  const { supabase, isAdmin, user } = useSupabase();
+  const { isAdmin, user } = useSupabase();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -51,7 +50,6 @@ export default function AdminDashboard() {
   const [salesData, setSalesData] = useState<any[]>([]);
   const [orderStatusData, setOrderStatusData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adminVerified, setAdminVerified] = useState(false);
   
   // Sample data for charts
   const defaultSalesData = [
@@ -70,166 +68,56 @@ export default function AdminDashboard() {
     { name: 'Cancelled', value: 10, color: '#EF4444' },
   ];
 
-  // Verify admin status
   useEffect(() => {
-    const verifyAdmin = async () => {
-      if (!user) {
-        navigate('/admin');
-        return;
-      }
-      
+    const fetchDashboardData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .maybeSingle();
-          
-        if (error) {
-          throw error;
-        }
+        setLoading(true);
         
-        if (!data?.is_admin) {
-          toast({
-            title: "Access denied",
-            description: "You don't have permission to access the admin area.",
-            variant: "destructive",
-          });
-          navigate('/');
-        } else {
-          setAdminVerified(true);
-          fetchDashboardData();
-        }
+        // Get product count
+        const { count: productCount, error: productError } = await from('products')
+          .select('*', { count: 'exact', head: true });
+          
+        if (productError) throw productError;
+        
+        // Get customer count
+        const { count: customerCount, error: customerError } = await from('profiles')
+          .select('*', { count: 'exact', head: true });
+          
+        if (customerError) throw customerError;
+        
+        // Set mock data for now
+        setStats({
+          products: productCount || 0,
+          orders: 15,
+          customers: customerCount || 0,
+          revenue: 24500,
+          newOrders: 3,
+          pendingOrders: 5,
+        });
+        
+        // Use default chart data
+        setSalesData(defaultSalesData);
+        setOrderStatusData(defaultOrderStatusData);
       } catch (error) {
-        console.error("Error verifying admin status:", error);
+        console.error('Error fetching dashboard data:', error);
         toast({
-          title: "Authentication error",
-          description: "There was a problem verifying your credentials.",
+          title: "Data fetch error",
+          description: "Failed to load dashboard data. Please try again.",
           variant: "destructive",
         });
-        navigate('/admin');
+      } finally {
+        setLoading(false);
       }
     };
     
-    verifyAdmin();
-  }, [user, navigate, toast, supabase]);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      if (!supabase) return;
-      
-      // Run concurrent requests to improve loading speed
-      const [
-        productsResponse, 
-        ordersResponse, 
-        customersResponse, 
-        revenueResponse,
-        newOrdersResponse,
-        pendingOrdersResponse
-      ] = await Promise.all([
-        // Get product count
-        supabase.from('products').select('*', { count: 'exact', head: true }),
-        
-        // Get order count
-        supabase.from('orders').select('*', { count: 'exact', head: true }).maybeSingle(),
-        
-        // Get customer count
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        
-        // Get revenue data
-        supabase.from('orders').select('total_amount, created_at').maybeSingle(),
-        
-        // Get new orders (last 7 days)
-        supabase.from('orders')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-          .maybeSingle(),
-        
-        // Get pending orders
-        supabase.from('orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'processing')
-          .maybeSingle()
-      ]);
-      
-      // Extract counts
-      const productCount = productsResponse.count || 0;
-      const orderCount = ordersResponse.count || 0;
-      const customerCount = customersResponse.count || 0;
-      const newOrdersCount = newOrdersResponse.count || 0;
-      const pendingOrdersCount = pendingOrdersResponse.count || 0;
-      
-      // Calculate total revenue
-      const orders = revenueResponse.data || [];
-      let totalRevenue = 0;
-      
-      if (Array.isArray(orders)) {
-        totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-      } else if (orders && typeof orders === 'object' && 'total_amount' in orders) {
-        totalRevenue = orders.total_amount || 0;
-      }
-      
-      // Prepare monthly sales data
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthlySales = Array(12).fill(0);
-      
-      if (Array.isArray(orders)) {
-        orders.forEach(order => {
-          if (order.created_at && order.total_amount) {
-            const date = new Date(order.created_at);
-            const month = date.getMonth();
-            monthlySales[month] += order.total_amount;
-          }
-        });
-      }
-      
-      const salesChartData = monthNames.map((name, i) => ({
-        name,
-        sales: monthlySales[i]
-      })).filter((_, i) => i <= new Date().getMonth());
-      
-      // Set chart data
-      setSalesData(salesChartData.length > 0 ? salesChartData : defaultSalesData);
-      setOrderStatusData(defaultOrderStatusData);
-      
-      setStats({
-        products: productCount,
-        orders: orderCount,
-        customers: customerCount,
-        revenue: totalRevenue,
-        newOrders: newOrdersCount,
-        pendingOrders: pendingOrdersCount
-      });
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Data fetch error",
-        description: "Failed to load dashboard data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    // Only fetch data if the user is logged in and is an admin
+    if (user && isAdmin) {
+      fetchDashboardData();
     }
-  };
+  }, [user, isAdmin, toast]);
 
   // COLORS for the pie chart
   const COLORS = ['#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6'];
-
-  // If not admin verified, show loading state
-  if (!adminVerified) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-[80vh]">
-          <div className="text-center">
-            <div className="animate-spin mb-4 h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-            <h2 className="text-xl font-medium">Verifying admin credentials...</h2>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
 
   return (
     <AdminLayout>
