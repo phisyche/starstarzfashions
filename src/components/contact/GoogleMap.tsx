@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useLoadScript, GoogleMap as GoogleMapComponent, MarkerF } from "@react-google-maps/api";
+import { useLoadScript, GoogleMap as GoogleMapApi, MarkerF } from "@react-google-maps/api";
 
 const center = { lat: -1.286389, lng: 36.817223 }; // Nairobi coordinates
 
@@ -43,7 +43,7 @@ export function Map() {
   }
 
   return (
-    <GoogleMapComponent
+    <GoogleMapApi
       zoom={15}
       center={center}
       mapContainerClassName="w-full h-[400px] rounded-lg"
@@ -55,10 +55,10 @@ export function Map() {
       }}
     >
       <MarkerF position={center} />
-    </GoogleMapComponent>
+    </GoogleMapApi>
   );
 }
 
 // Export named components for external use
-export const GoogleMapComponent = Map;
+export const MapComponent = Map;
 export const GoogleMap = Map;
