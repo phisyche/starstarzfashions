@@ -39,6 +39,8 @@ export default function AdminLogin() {
   useEffect(() => {
     // Check if profiles table exists and has proper setup
     const checkDatabase = async () => {
+      if (!supabase) return;
+      
       try {
         // This will fail if the profiles table doesn't exist
         const { data, error } = await supabase
@@ -63,25 +65,52 @@ export default function AdminLogin() {
   
   // If user is already logged in and is admin, redirect to dashboard
   useEffect(() => {
-    if (user && isAdmin) {
-      console.log("Admin login: User is admin, redirecting to dashboard");
-      navigate('/admin/dashboard');
-    } else if (user && !isAdmin) {
-      // If user is logged in but not admin, show error
-      console.log("Admin login: User is not admin", user?.email);
-      toast({
-        title: "Access Denied",
-        description: "You don't have administrator privileges.",
-        variant: "destructive",
-      });
-      navigate('/');
+    const checkAdminStatus = async () => {
+      if (!user) return;
+      
+      try {
+        // Do a fresh check of admin status from the database
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+          
+        if (profileError) {
+          console.error("Error checking admin status:", profileError);
+          return;
+        }
+        
+        const userIsAdmin = profileData?.is_admin || false;
+        
+        if (userIsAdmin) {
+          console.log("Admin login: User is admin, redirecting to dashboard");
+          navigate('/admin/dashboard');
+        } else if (user) {
+          // If user is logged in but not admin, show error
+          console.log("Admin login: User is not admin", user.email);
+          toast({
+            title: "Access Denied",
+            description: "You don't have administrator privileges.",
+            variant: "destructive",
+          });
+          navigate('/');
+        }
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+      }
+    };
+    
+    if (user) {
+      checkAdminStatus();
     }
-  }, [user, isAdmin, navigate, toast]);
+  }, [user, navigate, toast, supabase]);
   
   const onSubmit = async (data: FormValues) => {
     try {
       setError(null);
       setIsLoading(true);
+      
       // Sign in the user
       await signIn(data.email, data.password);
       

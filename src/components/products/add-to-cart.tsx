@@ -42,32 +42,42 @@ export const AddToCart: React.FC<AddToCartProps> = ({
     setIsAdding(true);
     
     // Add item to cart with all required properties
-    addItem({
-      productId,
-      name,
-      price,
-      image,
-      quantity,
-      size: size || 'M',
-      color: color || 'Default',
-    });
-    
-    toast({
-      title: "Added to cart",
-      description: `${quantity} × ${name} has been added to your cart.`,
-    });
-
-    // Show success state
-    setTimeout(() => {
-      setIsAdding(false);
-      setIsAdded(true);
+    try {
+      addItem({
+        productId,
+        name,
+        price,
+        image,
+        quantity,
+        size: size || 'M',
+        color: color || 'Default',
+      });
       
-      // Reset to normal state after showing success
+      toast({
+        title: "Added to cart",
+        description: `${quantity} × ${name} has been added to your cart.`,
+      });
+
+      // Show success state
       setTimeout(() => {
-        setIsAdded(false);
-        setQuantity(1);
-      }, 1500);
-    }, 500);
+        setIsAdding(false);
+        setIsAdded(true);
+        
+        // Reset to normal state after showing success
+        setTimeout(() => {
+          setIsAdded(false);
+          setQuantity(1);
+        }, 1500);
+      }, 500);
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem adding the item to your cart.",
+        variant: "destructive"
+      });
+      setIsAdding(false);
+    }
   };
 
   return (

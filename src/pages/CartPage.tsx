@@ -10,7 +10,7 @@ import { useCart } from "@/context/CartContext";
 import { toast } from "@/components/ui/use-toast";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, subtotal } = useCart();
+  const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   
@@ -41,6 +41,12 @@ export default function CartPage() {
     }
   };
   
+  const handleClearCart = () => {
+    if (window.confirm("Are you sure you want to clear your cart?")) {
+      clearCart();
+    }
+  };
+  
   // Calculate totals
   const discount = promoApplied ? Math.round(subtotal * 0.2) : 0;
   const shipping = subtotal > 0 ? 300 : 0;
@@ -66,12 +72,17 @@ export default function CartPage() {
                 <div className="p-6 border-b">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold">Shopping Cart ({items.length})</h2>
-                    <Button variant="ghost" size="sm" className="gap-1 text-gray-600" asChild>
-                      <Link to="/shop">
-                        <ShoppingCart className="h-4 w-4" />
-                        Continue Shopping
-                      </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" className="gap-1 text-gray-600" onClick={handleClearCart}>
+                        Clear Cart
+                      </Button>
+                      <Button variant="ghost" size="sm" className="gap-1 text-gray-600" asChild>
+                        <Link to="/shop">
+                          <ShoppingCart className="h-4 w-4" />
+                          Continue Shopping
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 

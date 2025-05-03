@@ -101,7 +101,7 @@ export function SiteHeader() {
             <Button variant="ghost" size="icon">
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-theme-pink text-[10px] font-medium text-white">
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[10px] font-medium text-white">
                   {itemCount > 99 ? '99+' : itemCount}
                 </span>
               )}

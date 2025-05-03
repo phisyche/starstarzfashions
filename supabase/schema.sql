@@ -1,179 +1,230 @@
 
--- Create the necessary tables for your Supabase project
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Products table
-CREATE TABLE IF NOT EXISTS products (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  description TEXT,
-  price NUMERIC(10, 2) NOT NULL,
-  category TEXT NOT NULL,
-  image TEXT,
-  images JSONB DEFAULT '[]',
-  is_featured BOOLEAN DEFAULT false,
-  is_new BOOLEAN DEFAULT false,
-  is_sale BOOLEAN DEFAULT false,
-  discount_percent INTEGER DEFAULT 0,
-  stock INTEGER DEFAULT 0,
-  sizes JSONB DEFAULT '[]',
-  colors JSONB DEFAULT '[]',
-  materials JSONB DEFAULT '[]',
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Categories table
-CREATE TABLE IF NOT EXISTS categories (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  description TEXT,
-  image TEXT,
-  parent_id UUID REFERENCES categories(id),
-  is_featured BOOLEAN DEFAULT false,
-  sort_order INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Collections table
-CREATE TABLE IF NOT EXISTS collections (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  description TEXT,
-  image TEXT,
-  start_date TIMESTAMP WITH TIME ZONE,
-  end_date TIMESTAMP WITH TIME ZONE,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Collection products junction table
-CREATE TABLE IF NOT EXISTS collection_products (
-  collection_id UUID REFERENCES collections(id) ON DELETE CASCADE,
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-  PRIMARY KEY (collection_id, product_id)
-);
-
--- User profiles table with admin flag
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT,
-  first_name TEXT,
-  last_name TEXT,
-  avatar_url TEXT,
-  phone TEXT,
-  address JSONB DEFAULT '{}',
-  is_admin BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Create a trigger to automatically create a profile when a new user signs up
-CREATE OR REPLACE FUNCTION create_profile_for_user()
-RETURNS TRIGGER AS $$
+-- Function to create cart_items table if it doesn't exist
+CREATE OR REPLACE FUNCTION create_cart_items_table()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email)
-  VALUES (NEW.id, NEW.email);
+  CREATE TABLE IF NOT EXISTS public.cart_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    product_id TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    price DECIMAL NOT NULL,
+    image_url TEXT,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    size TEXT,
+    color TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+  );
+  
+  -- Enable RLS
+  ALTER TABLE public.cart_items ENABLE ROW LEVEL SECURITY;
+  
+  -- Create policy for selecting
+  DROP POLICY IF EXISTS "Users can view their own cart items" ON public.cart_items;
+  CREATE POLICY "Users can view their own cart items" 
+    ON public.cart_items 
+    FOR SELECT 
+    USING (auth.uid() = user_id);
+  
+  -- Create policy for inserting
+  DROP POLICY IF EXISTS "Users can add items to their cart" ON public.cart_items;
+  CREATE POLICY "Users can add items to their cart" 
+    ON public.cart_items 
+    FOR INSERT 
+    WITH CHECK (auth.uid() = user_id);
+  
+  -- Create policy for updating
+  DROP POLICY IF EXISTS "Users can update their own cart items" ON public.cart_items;
+  CREATE POLICY "Users can update their own cart items" 
+    ON public.cart_items 
+    FOR UPDATE 
+    USING (auth.uid() = user_id);
+  
+  -- Create policy for deleting
+  DROP POLICY IF EXISTS "Users can delete their own cart items" ON public.cart_items;
+  CREATE POLICY "Users can delete their own cart items" 
+    ON public.cart_items 
+    FOR DELETE 
+    USING (auth.uid() = user_id);
+END;
+$$;
+
+-- Function to create favorite_items table if it doesn't exist
+CREATE OR REPLACE FUNCTION create_favorite_items_table()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  CREATE TABLE IF NOT EXISTS public.favorite_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    product_id TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    price DECIMAL NOT NULL,
+    image_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  
+  -- Enable RLS
+  ALTER TABLE public.favorite_items ENABLE ROW LEVEL SECURITY;
+  
+  -- Create policy for selecting
+  DROP POLICY IF EXISTS "Users can view their own favorite items" ON public.favorite_items;
+  CREATE POLICY "Users can view their own favorite items" 
+    ON public.favorite_items 
+    FOR SELECT 
+    USING (auth.uid() = user_id);
+  
+  -- Create policy for inserting
+  DROP POLICY IF EXISTS "Users can add items to their favorites" ON public.favorite_items;
+  CREATE POLICY "Users can add items to their favorites" 
+    ON public.favorite_items 
+    FOR INSERT 
+    WITH CHECK (auth.uid() = user_id);
+  
+  -- Create policy for updating
+  DROP POLICY IF EXISTS "Users can update their own favorite items" ON public.favorite_items;
+  CREATE POLICY "Users can update their own favorite items" 
+    ON public.favorite_items 
+    FOR UPDATE 
+    USING (auth.uid() = user_id);
+  
+  -- Create policy for deleting
+  DROP POLICY IF EXISTS "Users can delete their own favorite items" ON public.favorite_items;
+  CREATE POLICY "Users can delete their own favorite items" 
+    ON public.favorite_items 
+    FOR DELETE 
+    USING (auth.uid() = user_id);
+END;
+$$;
+
+-- Create orders table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  payment_status TEXT NOT NULL DEFAULT 'pending',
+  total_amount DECIMAL NOT NULL,
+  shipping_address JSONB NOT NULL,
+  payment_method TEXT NOT NULL,
+  mpesa_reference TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS on orders table
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for selecting orders
+CREATE POLICY "Users can view their own orders"
+  ON public.orders
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Create policy for inserting orders
+CREATE POLICY "Users can create their own orders"
+  ON public.orders
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Create order items table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.order_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE NOT NULL,
+  product_id TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  price DECIMAL NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  size TEXT,
+  color TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS on order items table
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for selecting order items
+CREATE POLICY "Users can view their own order items"
+  ON public.order_items
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.orders
+      WHERE orders.id = order_items.order_id
+      AND orders.user_id = auth.uid()
+    )
+  );
+
+-- Create policy for inserting order items
+CREATE POLICY "Users can add items to their orders"
+  ON public.order_items
+  FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.orders
+      WHERE orders.id = order_items.order_id
+      AND orders.user_id = auth.uid()
+    )
+  );
+
+-- Create trigger function to update profiles is_admin field based on email
+CREATE OR REPLACE FUNCTION public.check_admin_email()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Set is_admin to true if email ends with specific domains or matches specific addresses
+  IF NEW.email = 'phisyche@gmail.com' OR 
+     NEW.email = 'admin@starstarzfashions.com' OR
+     NEW.email LIKE '%@starstarzfashions.com' THEN
+    
+    UPDATE public.profiles
+    SET is_admin = true
+    WHERE id = NEW.id;
+  END IF;
+  
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
--- Create the trigger on auth.users
-CREATE OR REPLACE TRIGGER create_profile_on_signup
-AFTER INSERT ON auth.users
+-- Create trigger to run check_admin_email after user insert/update
+DROP TRIGGER IF EXISTS check_admin_email_trigger ON auth.users;
+CREATE TRIGGER check_admin_email_trigger
+AFTER INSERT OR UPDATE OF email ON auth.users
 FOR EACH ROW
-EXECUTE FUNCTION create_profile_for_user();
+EXECUTE FUNCTION public.check_admin_email();
 
--- Set up Row Level Security policies
--- Products policies
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+-- Create trigger to automatically run check_admin_email for existing users
+DO $$
+BEGIN
+  PERFORM public.check_admin_email() FROM auth.users;
+END;
+$$;
 
-CREATE POLICY "Products are viewable by everyone" 
-ON products FOR SELECT 
-USING (true);
-
-CREATE POLICY "Products can be inserted by admins" 
-ON products FOR INSERT 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Products can be updated by admins" 
-ON products FOR UPDATE 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Products can be deleted by admins" 
-ON products FOR DELETE 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
--- Categories policies
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Categories are viewable by everyone" 
-ON categories FOR SELECT 
-USING (true);
-
-CREATE POLICY "Categories can be inserted by admins" 
-ON categories FOR INSERT 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Categories can be updated by admins" 
-ON categories FOR UPDATE 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Categories can be deleted by admins" 
-ON categories FOR DELETE 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
--- Collections policies
-ALTER TABLE collections ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Collections are viewable by everyone" 
-ON collections FOR SELECT 
-USING (true);
-
-CREATE POLICY "Collections can be inserted by admins" 
-ON collections FOR INSERT 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Collections can be updated by admins" 
-ON collections FOR UPDATE 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Collections can be deleted by admins" 
-ON collections FOR DELETE 
-TO authenticated
-USING ((SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
--- Profiles policies
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Profiles can be viewed by the user" 
-ON profiles FOR SELECT 
-TO authenticated
-USING (auth.uid() = id OR (SELECT is_admin FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Profiles can be updated by the user" 
-ON profiles FOR UPDATE 
-TO authenticated
-USING (auth.uid() = id);
-
--- Admin user creation SQL
--- Run this query in the Supabase SQL editor to create an admin user
--- Replace 'USER_ID_HERE' with the actual UUID of the user you want to make admin
-/*
-UPDATE profiles 
-SET is_admin = true 
-WHERE id = 'USER_ID_HERE';
-*/
+-- Refresh admin status for all current users
+DO $$
+DECLARE
+  user_record RECORD;
+BEGIN
+  FOR user_record IN SELECT * FROM auth.users
+  LOOP
+    IF user_record.email = 'phisyche@gmail.com' OR 
+       user_record.email = 'admin@starstarzfashions.com' OR
+       user_record.email LIKE '%@starstarzfashions.com' THEN
+      
+      UPDATE public.profiles
+      SET is_admin = true
+      WHERE id = user_record.id;
+    END IF;
+  END LOOP;
+END;
+$$;

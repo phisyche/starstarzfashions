@@ -2,42 +2,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient, SupabaseClient, Session } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from "@/integrations/supabase/client";
 
 // Initialize Supabase client with proper URL and key
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pifzapdqhaxgskypadws.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZnphcGRxaGF4Z3NreXBhZHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3OTQ2NjIsImV4cCI6MjA2MTM3MDY2Mn0.CPcFj62zuDGbTJNjsGgA7NK2YAACDDlieKCL_QFDg8M';
-
-let supabaseClient: SupabaseClient;
-
-try {
-  // Create the Supabase client
-  supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-  console.log('Supabase client initialized with URL:', supabaseUrl);
-} catch (error) {
-  console.error('Error initializing Supabase client:', error);
-  // Create a mock client as fallback
-  supabaseClient = {
-    auth: {
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase client initialization failed') }),
-      signOut: () => Promise.resolve({ error: null }),
-      signInWithOAuth: () => Promise.resolve({ data: null, error: null }),
-    },
-    from: () => ({
-      select: () => ({ data: null, error: null }),
-      insert: () => ({ data: null, error: null }),
-      update: () => ({ data: null, error: null }),
-      delete: () => ({ data: null, error: null }),
-    }),
-    storage: {
-      from: () => ({
-        upload: () => Promise.resolve({ data: null, error: null }),
-        getPublicUrl: () => ({ data: { publicUrl: '' } }),
-      }),
-    },
-  } as any;
-}
 
 type SupabaseContextType = {
   supabase: SupabaseClient;
@@ -64,7 +33,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     // Get initial session
     const initializeAuth = async () => {
       try {
-        const { data, error } = await supabaseClient.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Error getting session:", error);
@@ -77,7 +46,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
         // Check if user is admin
         if (data.session?.user) {
-          const { data: userData, error: profileError } = await supabaseClient
+          const { data: userData, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
             .eq('id', data.session.user.id)
@@ -85,6 +54,30 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
           if (profileError) {
             console.error("Error fetching profile data:", profileError);
+            // Create a profile if it doesn't exist
+            if (profileError.code === 'PGRST116') {
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: data.session.user.id,
+                  email: data.session.user.email,
+                  is_admin: data.session.user.email === 'phisyche@gmail.com' || 
+                            data.session.user.email?.endsWith('@starstarzfashions.com')
+                });
+              
+              if (insertError) {
+                console.error("Error creating profile:", insertError);
+              } else {
+                // Check admin status again
+                const { data: newData } = await supabase
+                  .from('profiles')
+                  .select('is_admin')
+                  .eq('id', data.session.user.id)
+                  .single();
+                
+                setIsAdmin(newData?.is_admin || false);
+              }
+            }
           } else {
             console.log("Admin status check:", userData?.is_admin);
             setIsAdmin(userData?.is_admin || false);
@@ -100,7 +93,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         console.log("Auth state changed:", _event, session?.user?.email);
         setSession(session);
@@ -108,18 +101,48 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
         // Check if user is admin when auth changes
         if (session?.user) {
-          const { data: userData, error: profileError } = await supabaseClient
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', session.user.id)
-            .single();
+          setTimeout(async () => {
+            try {
+              const { data: userData, error: profileError } = await supabase
+                .from('profiles')
+                .select('is_admin')
+                .eq('id', session.user.id)
+                .single();
 
-          if (profileError) {
-            console.error("Error fetching profile data on auth change:", profileError);
-          } else {
-            console.log("Admin status update:", userData?.is_admin);
-            setIsAdmin(userData?.is_admin || false);
-          }
+              if (profileError) {
+                console.error("Error fetching profile data on auth change:", profileError);
+                // Create a profile if it doesn't exist
+                if (profileError.code === 'PGRST116') {
+                  const { error: insertError } = await supabase
+                    .from('profiles')
+                    .insert({
+                      id: session.user.id,
+                      email: session.user.email,
+                      is_admin: session.user.email === 'phisyche@gmail.com' || 
+                                session.user.email?.endsWith('@starstarzfashions.com')
+                    });
+                  
+                  if (insertError) {
+                    console.error("Error creating profile:", insertError);
+                  } else {
+                    // Check admin status again
+                    const { data: newData } = await supabase
+                      .from('profiles')
+                      .select('is_admin')
+                      .eq('id', session.user.id)
+                      .single();
+                    
+                    setIsAdmin(newData?.is_admin || false);
+                  }
+                }
+              } else {
+                console.log("Admin status update:", userData?.is_admin);
+                setIsAdmin(userData?.is_admin || false);
+              }
+            } catch (error) {
+              console.error("Error checking admin status:", error);
+            }
+          }, 0);
         } else {
           setIsAdmin(false);
         }
@@ -136,7 +159,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -147,18 +170,48 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
       
       // After successful login, check if the user is an admin
       if (data.user) {
-        const { data: profileData, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', data.user.id)
-          .single();
-          
-        if (profileError) {
-          console.error("Error checking admin status:", profileError);
-        } else {
-          console.log("Admin login check:", profileData?.is_admin);
-          setIsAdmin(profileData?.is_admin || false);
-        }
+        setTimeout(async () => {
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('is_admin')
+              .eq('id', data.user.id)
+              .single();
+              
+            if (profileError) {
+              console.error("Error checking admin status:", profileError);
+              // Create a profile if it doesn't exist
+              if (profileError.code === 'PGRST116') {
+                const { error: insertError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: data.user.id,
+                    email: data.user.email,
+                    is_admin: data.user.email === 'phisyche@gmail.com' || 
+                              data.user.email?.endsWith('@starstarzfashions.com')
+                  });
+                
+                if (insertError) {
+                  console.error("Error creating profile:", insertError);
+                } else {
+                  // Check admin status again
+                  const { data: newData } = await supabase
+                    .from('profiles')
+                    .select('is_admin')
+                    .eq('id', data.user.id)
+                    .single();
+                  
+                  setIsAdmin(newData?.is_admin || false);
+                }
+              }
+            } else {
+              console.log("Admin login check:", profileData?.is_admin);
+              setIsAdmin(profileData?.is_admin || false);
+            }
+          } catch (error) {
+            console.error("Error checking admin status:", error);
+          }
+        }, 0);
       }
       
       toast({
@@ -181,7 +234,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabaseClient.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -209,7 +262,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   const signOut = async () => {
     try {
       setLoading(true);
-      const { error } = await supabaseClient.auth.signOut();
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
         throw error;
@@ -240,7 +293,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   const signInWithGoogle = async () => {
     try {
-      const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`
@@ -263,7 +316,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const value = {
-    supabase: supabaseClient,
+    supabase,
     session,
     user,
     signIn,
