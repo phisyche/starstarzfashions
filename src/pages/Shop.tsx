@@ -1,8 +1,8 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { ProductCard } from "@/components/products/product-card";
-import { products, categories } from "@/data/products";
-import { useState } from "react";
+import { products } from "@/data/products";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useSupabase } from "@/context/SupabaseContext";
 
 export default function Shop() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,6 +19,32 @@ export default function Shop() {
   const [selectedSort, setSelectedSort] = useState("featured");
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [showFilters, setShowFilters] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const { supabase } = useSupabase();
+
+  // Fetch categories from Supabase
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!supabase) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('sort_order', { ascending: true });
+          
+        if (error) throw error;
+        
+        if (data) {
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    
+    fetchCategories();
+  }, [supabase]);
 
   // Implement filtering
   const filteredProducts = products.filter((product) => {
@@ -28,7 +55,7 @@ export default function Shop() {
     
     // Filter by category
     const matchesCategory = selectedCategory 
-      ? product.category.toLowerCase().includes(selectedCategory.toLowerCase()) 
+      ? product.category.toLowerCase() === selectedCategory.toLowerCase() 
       : true;
     
     // Filter by price range

@@ -36,59 +36,34 @@ export default function AdminLogin() {
     },
   });
   
-  useEffect(() => {
-    // Check if profiles table exists and has proper setup
-    const checkDatabase = async () => {
-      if (!supabase) return;
-      
-      try {
-        // This will fail if the profiles table doesn't exist
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, is_admin')
-          .limit(1);
-          
-        if (error && error.code === '42P01') {
-          setError("Database setup incomplete. Please run schema.sql in Supabase SQL editor.");
-        } else {
-          setDbChecked(true);
-        }
-      } catch (err: any) {
-        console.error("Database check error:", err);
-      }
-    };
-    
-    if (supabase) {
-      checkDatabase();
-    }
-  }, [supabase]);
-  
   // If user is already logged in and is admin, redirect to dashboard
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) return;
       
       try {
+        console.log("Checking admin status for:", user.email);
         // Do a fresh check of admin status from the database
-        const { data: profileData, error: profileError } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
           
-        if (profileError) {
-          console.error("Error checking admin status:", profileError);
+        if (error) {
+          console.error("Error checking admin status:", error);
           return;
         }
         
-        const userIsAdmin = profileData?.is_admin || false;
+        const userIsAdmin = data?.is_admin || false;
+        console.log("Admin status result:", userIsAdmin);
         
         if (userIsAdmin) {
-          console.log("Admin login: User is admin, redirecting to dashboard");
+          console.log("User is admin, redirecting to dashboard");
           navigate('/admin/dashboard');
         } else if (user) {
           // If user is logged in but not admin, show error
-          console.log("Admin login: User is not admin", user.email);
+          console.log("User is not admin:", user.email);
           toast({
             title: "Access Denied",
             description: "You don't have administrator privileges.",
@@ -104,7 +79,7 @@ export default function AdminLogin() {
     if (user) {
       checkAdminStatus();
     }
-  }, [user, navigate, toast, supabase]);
+  }, [user, navigate, toast, supabase, isAdmin]);
   
   const onSubmit = async (data: FormValues) => {
     try {
@@ -115,9 +90,9 @@ export default function AdminLogin() {
       await signIn(data.email, data.password);
       
       // The redirect will happen in the useEffect when isAdmin is updated
-      // We don't need to redirect manually here
     } catch (error: any) {
       setError(error.message || "Failed to sign in");
+    } finally {
       setIsLoading(false);
     }
   };

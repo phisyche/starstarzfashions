@@ -58,58 +58,34 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Calculate subtotal
   const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
 
-  // Create necessary tables if they don't exist
-  useEffect(() => {
-    const createTablesIfNotExist = async () => {
-      if (!supabase) return;
+  // Execute DB setup
+  const setupDatabaseTables = async () => {
+    if (!supabase) return;
 
-      try {
-        // Check if cart_items table exists
-        const { error: cartCheckError } = await supabase
-          .from('cart_items')
-          .select('id')
-          .limit(1)
-          .maybeSingle();
-
-        // Create cart_items table if it doesn't exist
-        if (cartCheckError && cartCheckError.code === '42P01') {
-          console.log('Creating cart_items table...');
-          
-          const { error: createCartError } = await supabase.rpc('create_cart_items_table');
-          
-          if (createCartError) {
-            console.error('Error creating cart_items table:', createCartError);
-          } else {
-            console.log('cart_items table created successfully');
-          }
-        }
-
-        // Check if favorite_items table exists
-        const { error: favCheckError } = await supabase
-          .from('favorite_items')
-          .select('id')
-          .limit(1)
-          .maybeSingle();
-
-        // Create favorite_items table if it doesn't exist
-        if (favCheckError && favCheckError.code === '42P01') {
-          console.log('Creating favorite_items table...');
-          
-          const { error: createFavError } = await supabase.rpc('create_favorite_items_table');
-          
-          if (createFavError) {
-            console.error('Error creating favorite_items table:', createFavError);
-          } else {
-            console.log('favorite_items table created successfully');
-          }
-        }
-      } catch (error) {
-        console.error('Error checking or creating tables:', error);
+    try {
+      // Create cart_items table if it doesn't exist
+      const { error: cartError } = await supabase.rpc('create_cart_items_table');
+      if (cartError) {
+        console.error('Error creating cart_items table:', cartError);
+      } else {
+        console.log('cart_items table created or verified successfully');
       }
-    };
 
+      // Create favorite_items table if it doesn't exist  
+      const { error: favError } = await supabase.rpc('create_favorite_items_table');
+      if (favError) {
+        console.error('Error creating favorite_items table:', favError);
+      } else {
+        console.log('favorite_items table created or verified successfully');
+      }
+    } catch (error) {
+      console.error('Error setting up database tables:', error);
+    }
+  };
+
+  useEffect(() => {
     if (supabase) {
-      createTablesIfNotExist();
+      setupDatabaseTables();
     }
   }, [supabase]);
 
@@ -152,19 +128,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       
       try {
-        // First check if cart_items table exists
-        const { error: tableCheckError } = await supabase
-          .from('cart_items')
-          .select('id')
-          .limit(1)
-          .maybeSingle();
-          
-        if (tableCheckError && tableCheckError.code === '42P01') {
-          console.log('Cart items table does not exist, skipping database sync');
-          setIsLoading(false);
-          return;
-        }
-        
         // Fetch cart items from database
         const { data: cartData, error: cartError } = await supabase
           .from('cart_items')
@@ -179,25 +142,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: item.id,
             productId: item.product_id,
             name: item.product_name,
-            price: item.price,
-            image: item.image_url,
+            price: Number(item.price),
+            image: item.image_url || '',
             quantity: item.quantity,
             size: item.size,
             color: item.color
           })));
-        }
-        
-        // Check if favorite_items table exists
-        const { error: favTableCheckError } = await supabase
-          .from('favorite_items')
-          .select('id')
-          .limit(1)
-          .maybeSingle();
-          
-        if (favTableCheckError && favTableCheckError.code === '42P01') {
-          console.log('Favorite items table does not exist, skipping database sync');
-          setIsLoading(false);
-          return;
         }
         
         // Fetch favorite items from database
@@ -214,8 +164,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: item.id,
             productId: item.product_id,
             name: item.product_name,
-            price: item.price,
-            image: item.image_url,
+            price: Number(item.price),
+            image: item.image_url || '',
             dateAdded: item.created_at
           })));
         }
@@ -232,18 +182,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync cart with database when it changes
   useEffect(() => {
     const syncCartToDatabase = async () => {
-      if (!user || !supabase || items.length === 0) return;
+      if (!user || !supabase) return;
       
       try {
-        // Check if cart_items table exists first
-        const { error: tableCheckError } = await supabase
-          .from('cart_items')
-          .select('id')
-          .limit(1)
-          .maybeSingle();
-          
-        if (tableCheckError && tableCheckError.code === '42P01') {
-          console.log('Cart items table does not exist, skipping database sync');
+        if (items.length === 0) {
+          // If cart is empty, delete all items for this user
+          const { error: deleteError } = await supabase
+            .from('cart_items')
+            .delete()
+            .eq('user_id', user.id);
+            
+          if (deleteError) {
+            console.error('Error deleting cart items:', deleteError);
+          }
           return;
         }
         
@@ -281,7 +232,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     
-    if (user && items.length > 0) {
+    if (user) {
       syncCartToDatabase();
     }
   }, [items, user, supabase]);
@@ -289,18 +240,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync favorites with database when they change
   useEffect(() => {
     const syncFavoritesToDatabase = async () => {
-      if (!user || !supabase || favorites.length === 0) return;
+      if (!user || !supabase) return;
       
       try {
-        // Check if favorite_items table exists first
-        const { error: tableCheckError } = await supabase
-          .from('favorite_items')
-          .select('id')
-          .limit(1)
-          .maybeSingle();
-          
-        if (tableCheckError && tableCheckError.code === '42P01') {
-          console.log('Favorite items table does not exist, skipping database sync');
+        if (favorites.length === 0) {
+          // If favorites are empty, delete all items for this user
+          const { error: deleteError } = await supabase
+            .from('favorite_items')
+            .delete()
+            .eq('user_id', user.id);
+            
+          if (deleteError) {
+            console.error('Error deleting favorite items:', deleteError);
+          }
           return;
         }
         
@@ -336,7 +288,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     
-    if (user && favorites.length > 0) {
+    if (user) {
       syncFavoritesToDatabase();
     }
   }, [favorites, user, supabase]);

@@ -41,7 +41,6 @@ export const AddToCart: React.FC<AddToCartProps> = ({
   const handleAddToCart = () => {
     setIsAdding(true);
     
-    // Add item to cart with all required properties
     try {
       addItem({
         productId,
@@ -53,11 +52,6 @@ export const AddToCart: React.FC<AddToCartProps> = ({
         color: color || 'Default',
       });
       
-      toast({
-        title: "Added to cart",
-        description: `${quantity} × ${name} has been added to your cart.`,
-      });
-
       // Show success state
       setTimeout(() => {
         setIsAdding(false);

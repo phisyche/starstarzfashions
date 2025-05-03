@@ -36,7 +36,9 @@ import { useSupabase } from '@/context/SupabaseContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Price } from '@/components/ui/price';
-import { ShoppingBag, Heart, Package, UserIcon, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ShoppingBag, Heart, Package, UserIcon, AlertCircle, Settings, CreditCard, LogOut, Mail, User } from 'lucide-react';
 
 const profileFormSchema = z.object({
   first_name: z.string().min(2, 'First name must be at least 2 characters').max(50),
@@ -93,7 +95,7 @@ export default function AccountPage() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       
@@ -218,69 +220,62 @@ export default function AccountPage() {
     }
   };
   
-  // Handle account deletion
-  const handleDeleteAccount = async () => {
-    if (!supabase) return;
-    
-    try {
-      const { error } = await supabase.auth.admin.deleteUser(user?.id || '');
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Account deleted',
-        description: 'Your account has been successfully deleted.',
-      });
-      
-      // Sign out and redirect to home
-      await signOut();
-      navigate('/', { replace: true });
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete account. Please try again.',
-        variant: 'destructive',
-      });
-    }
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
   
   if (!user) {
     return null; // Redirect happens in useEffect
   }
   
+  const userInitials = profileData ? 
+    `${(profileData.first_name?.[0] || '').toUpperCase()}${(profileData.last_name?.[0] || '').toUpperCase()}` : 
+    user.email?.[0]?.toUpperCase() || '?';
+    
+  const fullName = profileData ? 
+    `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() : 
+    'User';
+  
   return (
     <MainLayout>
-      <div className="bg-gray-50 py-8">
-        <div className="container max-w-5xl">
-          <h1 className="text-3xl font-bold mb-2">My Account</h1>
-          <div className="text-gray-600">
-            Manage your account settings and view orders
+      <div className="bg-gradient-to-b from-primary/5 to-background py-10">
+        <div className="container max-w-6xl">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+              <AvatarImage src={profileData?.avatar_url} />
+              <AvatarFallback className="text-xl font-bold bg-primary text-primary-foreground">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold">{fullName}</h1>
+              <p className="text-muted-foreground">{user.email}</p>
+            </div>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" /> Sign Out
+            </Button>
           </div>
         </div>
       </div>
       
-      <div className="container max-w-5xl py-8">
+      <div className="container max-w-6xl py-8">
         <Tabs value={tab} onValueChange={setTab} className="space-y-8">
-          <div className="flex flex-col sm:flex-row justify-between gap-4">
-            <TabsList className="grid grid-cols-3 sm:flex sm:flex-row w-full sm:w-auto">
+          <div className="flex justify-between border-b">
+            <TabsList className="grid grid-cols-3 w-full sm:w-auto">
               <TabsTrigger value="profile" className="flex gap-2 items-center">
                 <UserIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Profile</span>
+                <span>Profile</span>
               </TabsTrigger>
               <TabsTrigger value="orders" className="flex gap-2 items-center">
                 <ShoppingBag className="w-4 h-4" />
-                <span className="hidden sm:inline">Orders</span>
+                <span>Orders</span>
               </TabsTrigger>
               <TabsTrigger value="favorites" className="flex gap-2 items-center">
                 <Heart className="w-4 h-4" />
-                <span className="hidden sm:inline">Favorites</span>
+                <span>Favorites</span>
               </TabsTrigger>
             </TabsList>
-            
-            <Button variant="outline" onClick={() => navigate('/shop')}>
-              Continue Shopping
-            </Button>
           </div>
           
           <TabsContent value="profile" className="space-y-6">
@@ -288,28 +283,35 @@ export default function AccountPage() {
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
                 <CardDescription>
-                  Update your personal details and address information
+                  Update your personal details and account information
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <Skeleton className="h-10" />
-                      <Skeleton className="h-10" />
+                      <div>
+                        <Skeleton className="h-4 w-20 mb-2" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div>
+                        <Skeleton className="h-4 w-20 mb-2" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
                     </div>
-                    <Skeleton className="h-10" />
-                    <Skeleton className="h-10" />
-                    <div className="grid grid-cols-2 gap-4">
-                      <Skeleton className="h-10" />
-                      <Skeleton className="h-10" />
+                    <div>
+                      <Skeleton className="h-4 w-20 mb-2" />
+                      <Skeleton className="h-10 w-full" />
                     </div>
-                    <Skeleton className="h-10" />
+                    <div>
+                      <Skeleton className="h-4 w-20 mb-2" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
                   </div>
                 ) : (
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="first_name"
@@ -317,7 +319,11 @@ export default function AccountPage() {
                             <FormItem>
                               <FormLabel>First Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Your first name" {...field} />
+                                <Input 
+                                  placeholder="John"
+                                  {...field} 
+                                  disabled={loading}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -331,7 +337,11 @@ export default function AccountPage() {
                             <FormItem>
                               <FormLabel>Last Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Your last name" {...field} />
+                                <Input 
+                                  placeholder="Doe"
+                                  {...field}
+                                  disabled={loading}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -339,37 +349,48 @@ export default function AccountPage() {
                         />
                       </div>
                       
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your email" {...field} disabled />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="email"
+                                  placeholder="john.doe@example.com"
+                                  {...field}
+                                  disabled={true}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="+254 123 456789"
+                                  {...field}
+                                  disabled={loading}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your phone number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <Separator className="my-6" />
                       
-                      <Separator />
-                      
-                      <h3 className="text-lg font-medium">Shipping Address</h3>
+                      <h3 className="text-lg font-medium mb-4">Shipping Address</h3>
                       
                       <FormField
                         control={form.control}
@@ -378,14 +399,18 @@ export default function AccountPage() {
                           <FormItem>
                             <FormLabel>Address</FormLabel>
                             <FormControl>
-                              <Input placeholder="Street address" {...field} />
+                              <Input 
+                                placeholder="123 Main St"
+                                {...field}
+                                disabled={loading}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <FormField
                           control={form.control}
                           name="city"
@@ -393,7 +418,11 @@ export default function AccountPage() {
                             <FormItem>
                               <FormLabel>City</FormLabel>
                               <FormControl>
-                                <Input placeholder="City" {...field} />
+                                <Input 
+                                  placeholder="Nairobi"
+                                  {...field}
+                                  disabled={loading}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -407,7 +436,29 @@ export default function AccountPage() {
                             <FormItem>
                               <FormLabel>County</FormLabel>
                               <FormControl>
-                                <Input placeholder="County" {...field} />
+                                <Input 
+                                  placeholder="Nairobi County"
+                                  {...field}
+                                  disabled={loading}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="postal_code"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Postal Code</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="00100"
+                                  {...field}
+                                  disabled={loading}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -415,23 +466,11 @@ export default function AccountPage() {
                         />
                       </div>
                       
-                      <FormField
-                        control={form.control}
-                        name="postal_code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Postal Code</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Postal code" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <Button type="submit" disabled={loading}>
-                        {loading ? 'Updating...' : 'Update Profile'}
-                      </Button>
+                      <div className="flex justify-end mt-6">
+                        <Button type="submit" disabled={loading}>
+                          {loading ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 )}
@@ -440,148 +479,163 @@ export default function AccountPage() {
             
             <Card>
               <CardHeader>
-                <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                <CardTitle>Password</CardTitle>
                 <CardDescription>
-                  Actions here cannot be undone. Please be certain.
+                  Change your password or reset it if you've forgotten it
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Delete Account</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your account
-                        and remove your data from our servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Delete Account
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="orders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order History</CardTitle>
-                <CardDescription>
-                  View your previous orders and their status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <Card key={i}>
-                        <CardHeader className="pb-2">
-                          <Skeleton className="h-5 w-40" />
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex justify-between mb-2">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-4 w-24" />
-                          </div>
-                          <Skeleton className="h-16 w-full" />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : orders.length > 0 ? (
-                  <div className="space-y-4">
-                    {orders.map((order) => (
-                      <Card key={order.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex flex-wrap justify-between gap-2">
-                            <CardTitle className="text-base">Order #{order.id.substring(0, 8)}</CardTitle>
-                            <div>
-                              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                                {order.status}
-                              </span>
-                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {order.payment_status}
-                              </span>
-                            </div>
-                          </div>
-                          <CardDescription>
-                            Placed on {new Date(order.created_at).toLocaleDateString()}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {order.order_items?.map((item: any) => (
-                              <div key={item.id} className="flex justify-between items-center text-sm">
-                                <div>{item.quantity}x {item.product_name}</div>
-                                <div><Price amount={item.price} /></div>
-                              </div>
-                            ))}
-                          </div>
-                          <Separator className="my-3" />
-                          <div className="flex justify-between items-center font-medium">
-                            <div>Total</div>
-                            <div><Price amount={order.total_amount} /></div>
-                          </div>
-                        </CardContent>
-                        <CardFooter>
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/orders/${order.id}`}>View Order Details</Link>
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="mx-auto bg-gray-100 rounded-full p-3 w-16 h-16 mb-4 flex items-center justify-center">
-                      <Package className="h-8 w-8 text-gray-500" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-2">No orders yet</h3>
-                    <p className="text-gray-500 mb-4">
-                      When you place an order, it will appear here.
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Update password</p>
+                    <p className="text-sm text-muted-foreground">
+                      It's a good idea to use a strong password that you don't use elsewhere
                     </p>
-                    <Button asChild>
-                      <Link to="/shop">Start Shopping</Link>
-                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="favorites" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Favorites</CardTitle>
-                <CardDescription>
-                  Products you've saved to your favorites list
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <div className="mx-auto bg-gray-100 rounded-full p-3 w-16 h-16 mb-4 flex items-center justify-center">
-                    <Heart className="h-8 w-8 text-gray-500" />
-                  </div>
-                  <h3 className="text-lg font-medium mb-2">No favorites yet</h3>
-                  <p className="text-gray-500 mb-4">
-                    Save your favorite products for quick access later.
-                  </p>
-                  <Button asChild>
-                    <Link to="/shop">Explore Products</Link>
+                  <Button>
+                    Change Password
                   </Button>
                 </div>
               </CardContent>
             </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Management</CardTitle>
+                <CardDescription>
+                  Options for managing your account data and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-destructive">Delete account</p>
+                    <p className="text-sm text-muted-foreground">
+                      Permanently delete your account and all associated data
+                    </p>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive">Delete Account</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete your
+                          account and remove your data from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction variant="destructive">
+                          Delete Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="orders">
+            <div className="space-y-8">
+              <h2 className="text-2xl font-bold">Order History</h2>
+              
+              {loading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-48 w-full rounded-lg" />
+                  <Skeleton className="h-48 w-full rounded-lg" />
+                </div>
+              ) : orders.length > 0 ? (
+                <div className="space-y-6">
+                  {orders.map((order) => (
+                    <Card key={order.id}>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Order #{order.id.substring(0, 8)}</CardTitle>
+                          <CardDescription>
+                            Placed on {new Date(order.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant={order.status === 'delivered' ? 'success' : order.status === 'processing' ? 'default' : 'secondary'}>
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </Badge>
+                          <Badge variant={order.payment_status === 'paid' ? 'success' : 'outline'}>
+                            {order.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {order.order_items && order.order_items.map((item: any) => (
+                            <div key={item.id} className="flex justify-between items-center py-2 border-b">
+                              <div className="flex-1">
+                                <p>{item.product_name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Qty: {item.quantity} × <Price amount={item.price} />
+                                </p>
+                              </div>
+                              <Price amount={item.price * item.quantity} />
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center pt-2">
+                            <span className="font-bold">Total</span>
+                            <Price amount={order.total_amount} size="lg" />
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="justify-end">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/order/${order.id}`}>
+                            <Package className="mr-2 h-4 w-4" />
+                            View Details
+                          </Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-medium mb-2">No orders yet</h3>
+                    <p className="text-center text-muted-foreground mb-6">
+                      Once you make a purchase, your order history will appear here.
+                    </p>
+                    <Button asChild>
+                      <Link to="/shop">Start Shopping</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="favorites">
+            <div className="space-y-8">
+              <h2 className="text-2xl font-bold">Saved Items</h2>
+              
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Heart className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-medium mb-2">Your wishlist is empty</h3>
+                  <p className="text-center text-muted-foreground mb-6">
+                    Save items you love by clicking the heart icon on any product.
+                  </p>
+                  <Button asChild>
+                    <Link to="/shop">Explore Products</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
