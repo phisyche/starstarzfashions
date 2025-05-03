@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { getImagePath } from '@/utils/image-utils';
 
 // Define the shape of a product image
 export interface ProductImage {
@@ -22,7 +23,7 @@ export const createProductImagePath = (filename: string): string => {
   }
   
   // Otherwise, assume it's in the products directory
-  return `/public/products/${filename}`;
+  return `/products/${filename}`;
 };
 
 // Function to organize uploaded product images

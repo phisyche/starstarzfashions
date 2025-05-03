@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for handling images throughout the application
  */
@@ -57,4 +58,25 @@ export const prepareImageForDB = (imageUrl: string): string => {
 export const getFileName = (path: string): string => {
   const parts = path.split('/');
   return parts[parts.length - 1];
+};
+
+/**
+ * Creates image path for an uploaded image
+ * 
+ * @param filename Uploaded image filename
+ * @returns Full path to the image
+ */
+export const getUploadedImagePath = (filename: string): string => {
+  if (!filename) return '/placeholder-product.jpg';
+  
+  if (filename.startsWith('http')) {
+    return filename;
+  }
+  
+  // For images in public folder with appropriate path
+  if (filename.startsWith('/')) {
+    return filename;
+  }
+  
+  return `/uploads/${filename}`;
 };

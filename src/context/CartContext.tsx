@@ -128,9 +128,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       
       try {
-        // Fetch cart items from database
+        // Fetch cart items from database using custom query to bypass type issues
         const { data: cartData, error: cartError } = await supabase
-          .from('cart_items')
+          .from('cart_items' as any)
           .select('*')
           .eq('user_id', user.id);
           
@@ -138,7 +138,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error fetching cart items:', cartError);
         } else if (cartData && cartData.length > 0) {
           // If there are items in the database, use those
-          setItems(cartData.map(item => ({
+          const typedCartData = cartData as unknown as Array<{
+            id: string;
+            user_id: string;
+            product_id: string;
+            product_name: string;
+            price: number;
+            image_url: string;
+            quantity: number;
+            size?: string;
+            color?: string;
+          }>;
+
+          setItems(typedCartData.map(item => ({
             id: item.id,
             productId: item.product_id,
             name: item.product_name,
@@ -150,9 +162,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           })));
         }
         
-        // Fetch favorite items from database
+        // Fetch favorite items from database using custom query to bypass type issues
         const { data: favData, error: favError } = await supabase
-          .from('favorite_items')
+          .from('favorite_items' as any)
           .select('*')
           .eq('user_id', user.id);
           
@@ -160,7 +172,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error fetching favorite items:', favError);
         } else if (favData && favData.length > 0) {
           // If there are favorites in the database, use those
-          setFavorites(favData.map(item => ({
+          const typedFavData = favData as unknown as Array<{
+            id: string;
+            user_id: string;
+            product_id: string;
+            product_name: string;
+            price: number;
+            image_url: string;
+            created_at: string;
+          }>;
+
+          setFavorites(typedFavData.map(item => ({
             id: item.id,
             productId: item.product_id,
             name: item.product_name,
@@ -188,7 +210,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (items.length === 0) {
           // If cart is empty, delete all items for this user
           const { error: deleteError } = await supabase
-            .from('cart_items')
+            .from('cart_items' as any)
             .delete()
             .eq('user_id', user.id);
             
@@ -200,7 +222,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // First, delete all existing cart items for this user
         const { error: deleteError } = await supabase
-          .from('cart_items')
+          .from('cart_items' as any)
           .delete()
           .eq('user_id', user.id);
           
@@ -211,7 +233,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Then, insert all current cart items
         const { error: insertError } = await supabase
-          .from('cart_items')
+          .from('cart_items' as any)
           .insert(items.map(item => ({
             id: item.id,
             user_id: user.id,
@@ -246,7 +268,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (favorites.length === 0) {
           // If favorites are empty, delete all items for this user
           const { error: deleteError } = await supabase
-            .from('favorite_items')
+            .from('favorite_items' as any)
             .delete()
             .eq('user_id', user.id);
             
@@ -258,7 +280,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // First, delete all existing favorite items for this user
         const { error: deleteError } = await supabase
-          .from('favorite_items')
+          .from('favorite_items' as any)
           .delete()
           .eq('user_id', user.id);
           
@@ -269,7 +291,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Then, insert all current favorite items
         const { error: insertError } = await supabase
-          .from('favorite_items')
+          .from('favorite_items' as any)
           .insert(favorites.map(item => ({
             id: item.id,
             user_id: user.id,

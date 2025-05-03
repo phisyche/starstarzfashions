@@ -25,37 +25,71 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
+  // Function to check admin status
+  const checkAdminStatus = async (userId: string) => {
+    if (!userId) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (error) {
+        console.error("Error checking admin status:", error);
+        return false;
+      }
+      
+      // If there's no profile entry yet, check if email is an admin email
+      if (!data) {
+        const { data: userData } = await supabase.auth.getUser();
+        const email = userData?.user?.email;
+        
+        if (email && (
+          email === 'phisyche@gmail.com' ||
+          email === 'admin@starstarzfashions.com' ||
+          email === 'orpheuscrypt@gmail.com' ||
+          email.endsWith('@starstarzfashions.com')
+        )) {
+          // Create profile with admin access
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ 
+              id: userId, 
+              email: email,
+              is_admin: true
+            }]);
+            
+          if (insertError) {
+            console.error("Error creating admin profile:", insertError);
+          }
+          
+          return true;
+        }
+        
+        return false;
+      }
+      
+      return data.is_admin || false;
+    } catch (error) {
+      console.error("Error in admin check:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         console.log("Auth state changed:", event, newSession?.user?.email);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         // Check admin status after session update
         if (newSession?.user) {
-          setTimeout(async () => {
-            try {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('is_admin')
-                .eq('id', newSession.user.id)
-                .maybeSingle();
-                
-              if (error) {
-                console.error("Error checking admin status:", error);
-                setIsAdmin(false);
-              } else if (data) {
-                console.log("Admin status:", data.is_admin);
-                setIsAdmin(data.is_admin || false);
-              } else {
-                setIsAdmin(false);
-              }
-            } catch (error) {
-              console.error("Error in admin check:", error);
-            }
-          }, 0);
+          const isUserAdmin = await checkAdminStatus(newSession.user.id);
+          setIsAdmin(isUserAdmin);
         } else {
           setIsAdmin(false);
         }
@@ -76,21 +110,8 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
           setUser(data.session.user);
           
           // Check admin status for initial session
-          try {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('is_admin')
-              .eq('id', data.session.user.id)
-              .maybeSingle();
-              
-            if (profileError) {
-              console.error("Error checking initial admin status:", profileError);
-            } else if (profileData) {
-              setIsAdmin(profileData.is_admin || false);
-            }
-          } catch (error) {
-            console.error("Error in initial admin check:", error);
-          }
+          const isUserAdmin = await checkAdminStatus(data.session.user.id);
+          setIsAdmin(isUserAdmin);
         }
       } catch (error) {
         console.error("Error getting session:", error);
@@ -116,6 +137,12 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
       
       if (error) {
         throw error;
+      }
+      
+      // Re-check admin status on sign in
+      if (data.user) {
+        const isUserAdmin = await checkAdminStatus(data.user.id);
+        setIsAdmin(isUserAdmin);
       }
       
       toast({

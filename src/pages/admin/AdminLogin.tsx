@@ -36,6 +36,42 @@ export default function AdminLogin() {
     },
   });
   
+  // Force re-check admin status for specific emails that should have admin access
+  useEffect(() => {
+    const checkAdminUsers = async () => {
+      if (!supabase || !user) return;
+      
+      // Check if the current user is one of our known admin emails
+      const isKnownAdmin = 
+        user.email === 'phisyche@gmail.com' ||
+        user.email === 'admin@starstarzfashions.com' ||
+        user.email === 'orpheuscrypt@gmail.com' ||
+        (user.email && user.email.endsWith('@starstarzfashions.com'));
+      
+      if (isKnownAdmin) {
+        console.log("This user should be an admin, ensuring admin status:", user.email);
+        
+        // Force update the admin status in the profiles table
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .update({ is_admin: true })
+            .eq('id', user.id);
+            
+          if (error) {
+            console.error("Error updating admin status:", error);
+          } else {
+            console.log("Admin status updated successfully");
+          }
+        } catch (err) {
+          console.error("Error in admin update:", err);
+        }
+      }
+    };
+    
+    checkAdminUsers();
+  }, [user, supabase]);
+  
   // If user is already logged in and is admin, redirect to dashboard
   useEffect(() => {
     const checkAdminStatus = async () => {
