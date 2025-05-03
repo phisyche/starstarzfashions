@@ -58,3 +58,6 @@ export function GoogleMapComponent() {
     </GoogleMap>
   );
 }
+
+// Add this named export to match what ContactPage is importing
+export const GoogleMap = GoogleMapComponent;

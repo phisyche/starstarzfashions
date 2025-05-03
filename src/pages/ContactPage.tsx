@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
-import { GoogleMap } from "@/components/contact/GoogleMap";
+import { GoogleMapComponent } from "@/components/contact/GoogleMap";
 import { Card, CardContent } from "@/components/ui/card";
 
 const formSchema = z.object({
@@ -228,7 +228,7 @@ export default function ContactPage() {
         {/* Map */}
         <div className="mt-12">
           <div className="border rounded-lg overflow-hidden h-[400px]">
-            <GoogleMap location={{ lat: -1.2306, lng: 36.8868 }} />
+            <GoogleMapComponent />
           </div>
         </div>
       </div>
