@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ import {
 import { products } from "@/data/products";
 
 export default function CheckoutPage() {
-  const { cart, clearCart, getTotalPrice } = useCart();
+  const { cartItems, clearCart, calculateTotalPrice } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -44,16 +45,30 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (cart.length === 0) {
+    if (cartItems.length === 0) {
       navigate('/cart');
     }
-  }, [cart, navigate]);
+  }, [cartItems, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      terms: checked
+    }));
+  };
+
+  const handlePaymentMethodChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      paymentMethod: value
     }));
   };
 
@@ -93,7 +108,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (cart.length === 0) {
+  if (cartItems.length === 0) {
     return null; // or a message indicating the cart is empty
   }
 
@@ -122,7 +137,7 @@ export default function CheckoutPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {cart.map((item) => {
+                    {cartItems.map((item) => {
                       const product = products.find(p => p.id === item.productId);
                       if (!product) return null;
 
@@ -150,7 +165,7 @@ export default function CheckoutPage() {
                     <TableRow>
                       <TableCell colSpan={3}>Total</TableCell>
                       <TableCell className="text-right">
-                        KES {getTotalPrice().toLocaleString()}
+                        KES {calculateTotalPrice().toLocaleString()}
                       </TableCell>
                     </TableRow>
                   </TableFooter>
@@ -166,10 +181,8 @@ export default function CheckoutPage() {
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="credit-card"
-                        name="paymentMethod"
-                        value="credit-card"
                         checked={formData.paymentMethod === 'credit-card'}
-                        onChange={handleChange}
+                        onCheckedChange={() => handlePaymentMethodChange('credit-card')}
                       />
                       <label
                         htmlFor="credit-card"
@@ -181,10 +194,8 @@ export default function CheckoutPage() {
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="paypal"
-                        name="paymentMethod"
-                        value="paypal"
                         checked={formData.paymentMethod === 'paypal'}
-                        onChange={handleChange}
+                        onCheckedChange={() => handlePaymentMethodChange('paypal')}
                       />
                       <label
                         htmlFor="paypal"
@@ -295,9 +306,8 @@ export default function CheckoutPage() {
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="terms"
-                  name="terms"
                   checked={formData.terms}
-                  onChange={handleChange}
+                  onCheckedChange={handleCheckboxChange}
                 />
                 <label
                   htmlFor="terms"

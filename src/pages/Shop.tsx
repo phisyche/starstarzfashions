@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -14,55 +15,43 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Filter, SlidersHorizontal, Search, Grid3X3, List } from "lucide-react";
-import { from } from "@/integrations/supabase/client";
+import { products, categories } from "@/data/products";
 
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [filteredProducts, setFilteredProducts] = useState(products);
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const categoryParam = searchParams.get("category") || "";
   const searchQuery = searchParams.get("search") || "";
   
-  // Fetch products and categories
+  // Filter products when search params change
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch categories
-        const { data: categoriesData, error: categoriesError } = await from('categories')
-          .select('*')
-          .order('sort_order', { ascending: true });
-          
-        if (categoriesError) throw categoriesError;
-        setCategories(categoriesData || []);
-        
-        // Fetch products with filtering
-        let query = from('products').select('*');
-        
-        if (categoryParam) {
-          query = query.eq('category', categoryParam);
-        }
-        
-        if (searchQuery) {
-          query = query.ilike('name', `%${searchQuery}%`);
-        }
-        
-        const { data: productsData, error: productsError } = await query;
-        
-        if (productsError) throw productsError;
-        setProducts(productsData || []);
-      } catch (error) {
-        console.error('Error fetching shop data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
     
-    fetchData();
+    let filtered = [...products];
+    
+    if (categoryParam) {
+      filtered = filtered.filter(product => product.category === categoryParam);
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(query) || 
+        product.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Simulate loading for better UX
+    const timer = setTimeout(() => {
+      setFilteredProducts(filtered);
+      setLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [categoryParam, searchQuery]);
 
   const toggleCategory = (slug: string) => {
@@ -153,29 +142,17 @@ export default function Shop() {
               <div>
                 <h2 className="font-semibold text-lg mb-2">Categories</h2>
                 <ul className="space-y-1">
-                  {loading ? (
-                    Array(8)
-                      .fill(0)
-                      .map((_, i) => (
-                        <li key={i} className="mb-2">
-                          <Skeleton className="h-6 w-full" />
-                        </li>
-                      ))
-                  ) : (
-                    <>
-                      {categories.map((category) => (
-                        <li key={category.id}>
-                          <Button
-                            variant={categoryParam === category.slug ? "secondary" : "ghost"}
-                            className="justify-start w-full font-normal"
-                            onClick={() => toggleCategory(category.slug)}
-                          >
-                            {category.name}
-                          </Button>
-                        </li>
-                      ))}
-                    </>
-                  )}
+                  {categories.map((category) => (
+                    <li key={category.id}>
+                      <Button
+                        variant={categoryParam === category.slug ? "secondary" : "ghost"}
+                        className="justify-start w-full font-normal"
+                        onClick={() => toggleCategory(category.slug)}
+                      >
+                        {category.name}
+                      </Button>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -274,8 +251,8 @@ export default function Shop() {
                 <div className="text-sm text-muted-foreground">
                   {loading
                     ? "Loading products..."
-                    : `Showing ${products.length} product${
-                        products.length === 1 ? "" : "s"
+                    : `Showing ${filteredProducts.length} product${
+                        filteredProducts.length === 1 ? "" : "s"
                       }`}
                 </div>
                 <div>
@@ -303,7 +280,7 @@ export default function Shop() {
                       </div>
                     ))}
                 </div>
-              ) : products.length === 0 ? (
+              ) : filteredProducts.length === 0 ? (
                 <div className="py-12 text-center">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                     <Search className="h-8 w-8 text-gray-400" />
@@ -321,7 +298,7 @@ export default function Shop() {
                       : "grid-cols-1"
                   }`}
                 >
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <ProductCard
                       key={product.id}
                       product={product}

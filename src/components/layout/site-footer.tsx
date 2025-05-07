@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 
 export function SiteFooter() {
@@ -5,10 +6,10 @@ export function SiteFooter() {
     <footer className="bg-gray-900 text-white py-12">
       <div className="container grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <h3 className="text-xl font-bold mb-4">Star<span className="text-kenya-red">Starz</span>Ltd</h3>
+          <h3 className="text-xl font-bold mb-4">Star <span className="text-kenya-red">Starz</span> Fashions</h3>
           <p className="text-gray-300 mb-4">
             Premium fashion and style delivered with excellence. 
-            Showcasing unique designs and quality craftsmanship.
+            Showcasing unique designs and quality craftsmanship from Kenya.
           </p>
           <div className="flex space-x-4">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors">
@@ -73,10 +74,10 @@ export function SiteFooter() {
         <div>
           <h4 className="font-semibold text-lg mb-4">Contact Us</h4>
           <address className="not-italic text-gray-300">
-            <p className="mb-2">Nairobi, Kenya</p>
+            <p className="mb-2">123 Fashion Avenue, Nairobi, Kenya</p>
             <p className="mb-2">
-              <a href="mailto:info@kenyanfashion.com" className="hover:text-white transition-colors">
-                info@kenyanfashion.com
+              <a href="mailto:info@starstarzfashions.com" className="hover:text-white transition-colors">
+                info@starstarzfashions.com
               </a>
             </p>
             <p className="mb-2">
@@ -97,7 +98,7 @@ export function SiteFooter() {
       
       <div className="border-t border-gray-800 mt-10 container">
         <p className="text-center text-gray-400 text-sm">
-          &copy; {new Date().getFullYear()} StarStarz Ltd. All rights reserved.
+          &copy; {new Date().getFullYear()} Star Starz Fashions. All rights reserved.
         </p>
       </div>
     </footer>

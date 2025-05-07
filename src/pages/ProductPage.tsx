@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +26,11 @@ export default function ProductPage() {
   
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+  // Calculate sale price if product is on sale
+  const salePrice = product?.isSale && product?.discountPercent > 0 
+    ? product.price * (1 - product.discountPercent / 100) 
+    : null;
   
   if (!product) {
     return (
@@ -60,34 +64,15 @@ export default function ProductPage() {
               />
             </div>
             <div className="grid grid-cols-4 gap-2">
-              <div className="aspect-square overflow-hidden rounded-md border bg-white cursor-pointer">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="h-full w-full object-cover" 
-                />
-              </div>
-              <div className="aspect-square overflow-hidden rounded-md border bg-white cursor-pointer">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="h-full w-full object-cover" 
-                />
-              </div>
-              <div className="aspect-square overflow-hidden rounded-md border bg-white cursor-pointer">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="h-full w-full object-cover" 
-                />
-              </div>
-              <div className="aspect-square overflow-hidden rounded-md border bg-white cursor-pointer">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="h-full w-full object-cover" 
-                />
-              </div>
+              {[product.image, ...(product.images || []).slice(0, 3)].map((image, index) => (
+                <div key={index} className="aspect-square overflow-hidden rounded-md border bg-white cursor-pointer">
+                  <img 
+                    src={image} 
+                    alt={`${product.name} view ${index + 1}`}
+                    className="h-full w-full object-cover" 
+                  />
+                </div>
+              ))}
             </div>
           </div>
           
@@ -115,14 +100,14 @@ export default function ProductPage() {
               
               <div className="flex items-center space-x-2 mb-6">
                 <Price amount={product.price} size="lg" />
-                {product.originalPrice && (
-                  <span className="text-gray-500 line-through">KES {product.originalPrice}</span>
+                {salePrice && (
+                  <span className="text-gray-500 line-through">KES {product.price}</span>
                 )}
               </div>
               
               <p className="text-gray-600 mb-6">
-                This beautiful {product.name.toLowerCase()} showcases authentic Kenyan design and craftsmanship.
-                Perfect for everyday wear or special occasions. Made with high-quality fabrics and attention to detail.
+                {product.description || `This beautiful ${product.name.toLowerCase()} showcases authentic Kenyan design and craftsmanship. 
+                Perfect for everyday wear or special occasions. Made with high-quality fabrics and attention to detail.`}
               </p>
               
               {/* Color Selection */}
@@ -264,8 +249,8 @@ export default function ProductPage() {
               <h3 className="text-lg font-medium mb-4">Product Description</h3>
               <div className="text-gray-600 space-y-4">
                 <p>
-                  This authentic {product.name.toLowerCase()} showcases the rich cultural heritage of Kenya.
-                  Each piece is carefully crafted with attention to detail and high-quality materials.
+                  {product.description || `This authentic ${product.name.toLowerCase()} showcases the rich cultural heritage of Kenya.
+                  Each piece is carefully crafted with attention to detail and high-quality materials.`}
                 </p>
                 <p>
                   The unique design draws inspiration from traditional patterns and motifs, 
