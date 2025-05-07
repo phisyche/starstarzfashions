@@ -27,7 +27,13 @@ export const getImagePath = (path: string): string => {
     return path;
   }
 
-  // If it starts with 'public/', remove that part
+  // If it's a lovable-uploads path, make sure it has the correct format
+  if (path.includes('lovable-uploads')) {
+    // Make sure the path starts with a forward slash
+    return path.startsWith('/') ? path : `/${path}`;
+  }
+  
+  // Remove 'public/' prefix if present, as this is not needed in the final URL
   if (path.startsWith('public/')) {
     return `/${path.substring(7)}`;
   }

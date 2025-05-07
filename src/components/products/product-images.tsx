@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { getImagePath } from '@/utils/image-utils';
 
@@ -35,8 +36,14 @@ export const organizeProductImages = (
     return [{ id: 'default', url: defaultImage, alt: 'Product image' }];
   }
   
+  // Make sure all image URLs are properly formatted
+  const processedImages = productImages.map(img => ({
+    ...img,
+    url: getImagePath(img.url)
+  }));
+  
   // Sort images by primary status and then by sort order
-  return [...productImages].sort((a, b) => {
+  return [...processedImages].sort((a, b) => {
     if (a.isPrimary && !b.isPrimary) return -1;
     if (!a.isPrimary && b.isPrimary) return 1;
     return (a.sortOrder || 0) - (b.sortOrder || 0);

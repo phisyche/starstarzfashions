@@ -18,35 +18,35 @@ export const collections = [
     name: 'Summer Collection',
     slug: 'summer-collection',
     description: 'Light and breezy pieces perfect for summer days',
-    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
+    image: '/lovable-uploads/d62448f0-bd29-4042-8d98-86953249d7b6.png'
   },
   {
     id: '2',
     name: 'Winter Essentials',
     slug: 'winter-essentials',
     description: 'Stay warm and stylish during the cold months',
-    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
+    image: '/lovable-uploads/805f0c30-3872-4a34-b17d-91249d49c8fe.png'
   },
   {
     id: '3',
     name: 'Formal Attire',
     slug: 'formal-attire',
     description: 'Sophisticated pieces for special occasions',
-    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
+    image: '/lovable-uploads/90493f64-dcbf-48fe-ac18-1815f2ebb412.png'
   },
   {
     id: '4',
     name: 'Active Wear',
     slug: 'active-wear',
     description: 'Performance clothing for your workout routine',
-    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
+    image: '/lovable-uploads/720e6bfb-1fe4-4ff5-b8f5-e8b23a38ebaf.png'
   },
   {
     id: '5',
     name: 'Kenyan Heritage',
     slug: 'kenyan-heritage',
     description: 'Traditional and modern designs inspired by Kenyan culture',
-    image: '/public/lovable-uploads/af1aebcd-1e33-49f4-93b1-b441fd8c5edc.png'
+    image: '/lovable-uploads/9ad9ae97-de2e-42ed-a29e-6e08a1600dd6.png'
   }
 ];
 
@@ -59,7 +59,7 @@ export const getProductsByCollection = (collectionSlug: string) => {
   return products.slice(0, 8);
 };
 
-// Products data with new images
+// Products data with the new uploaded images
 export const products = [
   {
     id: '1',
@@ -68,9 +68,9 @@ export const products = [
     description: 'Luxurious lavender velvet tracksuit featuring a comfortable fit and premium quality fabric.',
     price: 3500,
     category: 'women',
-    image: '/public/lovable-uploads/f11b9b38-0082-4d5a-8ff2-360448907bb1.png',
+    image: '/lovable-uploads/7d8e7740-9ea4-412d-9461-cda9c4043d67.png',
     images: [
-      '/public/lovable-uploads/f11b9b38-0082-4d5a-8ff2-360448907bb1.png'
+      '/lovable-uploads/7d8e7740-9ea4-412d-9461-cda9c4043d67.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Lavender', 'Black', 'Gray'],
@@ -87,9 +87,9 @@ export const products = [
     description: 'Stylish mint green t-shirt with graphic design paired with elegant floral print pants.',
     price: 4200,
     category: 'women',
-    image: '/public/lovable-uploads/e1e38f46-27ba-47fe-b3cf-ac333b7a7cf6.png',
+    image: '/lovable-uploads/2550e605-a2dc-49b2-915e-b85e997673df.png',
     images: [
-      '/public/lovable-uploads/e1e38f46-27ba-47fe-b3cf-ac333b7a7cf6.png'
+      '/lovable-uploads/2550e605-a2dc-49b2-915e-b85e997673df.png'
     ],
     sizes: ['XS', 'S', 'M', 'L'],
     colors: ['Mint Green/Black'],
@@ -106,9 +106,9 @@ export const products = [
     description: 'Premium designer tracksuits in exclusive patterns and colors, perfect for fashion-forward looks.',
     price: 6800,
     category: 'women',
-    image: '/public/lovable-uploads/afefaa6a-9ac2-4d38-a0a5-0a6aec428ce2.png',
+    image: '/lovable-uploads/80ddaeb8-9fce-4fd0-82b5-77e771451ab0.png',
     images: [
-      '/public/lovable-uploads/afefaa6a-9ac2-4d38-a0a5-0a6aec428ce2.png'
+      '/lovable-uploads/80ddaeb8-9fce-4fd0-82b5-77e771451ab0.png'
     ],
     sizes: ['S', 'M', 'L'],
     colors: ['Green/Black', 'Gold/Brown'],
@@ -125,9 +125,9 @@ export const products = [
     description: 'Men\'s classic grey tracksuit with matching vest, perfect for casual and sports wear.',
     price: 4800,
     category: 'men',
-    image: '/public/lovable-uploads/7dd5f6af-ce49-478d-9cb5-7dafbeb4b72b.png',
+    image: '/lovable-uploads/b6996288-d7fe-46ee-9f47-43c145eb0769.png',
     images: [
-      '/public/lovable-uploads/7dd5f6af-ce49-478d-9cb5-7dafbeb4b72b.png'
+      '/lovable-uploads/b6996288-d7fe-46ee-9f47-43c145eb0769.png'
     ],
     sizes: ['M', 'L', 'XL', 'XXL'],
     colors: ['Grey'],
@@ -144,9 +144,9 @@ export const products = [
     description: 'Fashionable black set with leopard print design elements. Includes top and pants.',
     price: 5500,
     category: 'women',
-    image: '/public/lovable-uploads/abc1f9a9-6a87-410e-bf4d-13de257e3e72.png',
+    image: '/lovable-uploads/c6dcc27f-776b-4b38-84c2-775c0d4d8c27.png',
     images: [
-      '/public/lovable-uploads/abc1f9a9-6a87-410e-bf4d-13de257e3e72.png'
+      '/lovable-uploads/c6dcc27f-776b-4b38-84c2-775c0d4d8c27.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black/Leopard Print'],
@@ -163,9 +163,9 @@ export const products = [
     description: 'Sophisticated black dress with mesh detail and gold star pattern, perfect for special occasions.',
     price: 4800,
     category: 'dresses',
-    image: '/public/lovable-uploads/7bf4f2b0-a8c7-4da6-a89b-7ebc204ecaaa.png',
+    image: '/lovable-uploads/6b26857d-f158-4afd-8c1e-a1d69f00b987.png',
     images: [
-      '/public/lovable-uploads/7bf4f2b0-a8c7-4da6-a89b-7ebc204ecaaa.png'
+      '/lovable-uploads/6b26857d-f158-4afd-8c1e-a1d69f00b987.png'
     ],
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     colors: ['Black'],
@@ -182,9 +182,9 @@ export const products = [
     description: 'Professional black business suit for women with skirt, perfect for office and formal settings.',
     price: 7500,
     category: 'women',
-    image: '/public/lovable-uploads/906fcc7b-40a6-4a82-b744-48caccb15b87.png',
+    image: '/lovable-uploads/1e3368c0-b257-4031-aade-7f9ca9638959.png',
     images: [
-      '/public/lovable-uploads/906fcc7b-40a6-4a82-b744-48caccb15b87.png'
+      '/lovable-uploads/1e3368c0-b257-4031-aade-7f9ca9638959.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black'],
@@ -201,9 +201,9 @@ export const products = [
     description: 'Classic grey formal suit for men with vest and white shirt, perfect for business and special occasions.',
     price: 12000,
     category: 'men',
-    image: '/public/lovable-uploads/42efd527-3543-499c-ae64-527c63001e6c.png',
+    image: '/lovable-uploads/5fb7f5a6-91c1-4256-9276-25ae38b9af6d.png',
     images: [
-      '/public/lovable-uploads/42efd527-3543-499c-ae64-527c63001e6c.png'
+      '/lovable-uploads/5fb7f5a6-91c1-4256-9276-25ae38b9af6d.png'
     ],
     sizes: ['48', '50', '52', '54'],
     colors: ['Grey'],
@@ -220,9 +220,9 @@ export const products = [
     description: 'Comfortable and stylish varsity hoodie set for casual wear.',
     price: 4500,
     category: 'men',
-    image: '/public/lovable-uploads/113f92d4-15c6-4d2a-a924-bb20fefe115e.png',
+    image: '/lovable-uploads/de183be4-0d91-471f-8a2b-1ad6a46ac0fe.png',
     images: [
-      '/public/lovable-uploads/113f92d4-15c6-4d2a-a924-bb20fefe115e.png'
+      '/lovable-uploads/de183be4-0d91-471f-8a2b-1ad6a46ac0fe.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Blue/Grey', 'Black/Grey'],
@@ -239,9 +239,9 @@ export const products = [
     description: 'Elegant blue formal suit for men, ideal for special occasions and professional settings.',
     price: 13000,
     category: 'men',
-    image: '/public/lovable-uploads/efe27d21-4b5c-49bc-8ef7-d76541972638.png',
+    image: '/lovable-uploads/9d1900d6-c052-42e7-99e9-121bc565efb3.png',
     images: [
-      '/public/lovable-uploads/efe27d21-4b5c-49bc-8ef7-d76541972638.png'
+      '/lovable-uploads/9d1900d6-c052-42e7-99e9-121bc565efb3.png'
     ],
     sizes: ['48', '50', '52', '54'],
     colors: ['Blue'],
@@ -258,9 +258,9 @@ export const products = [
     description: 'Stunning royal blue dress with layered design and button detail, perfect for special occasions.',
     price: 5800,
     category: 'dresses',
-    image: '/public/lovable-uploads/f38d8a00-0c3e-4535-b4a0-5d27606c328b.png',
+    image: '/lovable-uploads/f7138fbf-c738-4bde-be83-64fb39a22eb3.png',
     images: [
-      '/public/lovable-uploads/f38d8a00-0c3e-4535-b4a0-5d27606c328b.png'
+      '/lovable-uploads/f7138fbf-c738-4bde-be83-64fb39a22eb3.png'
     ],
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     colors: ['Royal Blue'],
@@ -277,9 +277,9 @@ export const products = [
     description: 'Elegant black dress with see-through pearl-studded sleeves for a sophisticated evening look.',
     price: 6200,
     category: 'dresses',
-    image: '/public/lovable-uploads/b4fd900d-0cdf-44ea-8615-4e0c3f57b4d0.png',
+    image: '/lovable-uploads/5cb8074a-ef41-42af-831e-61b13dd7de02.png',
     images: [
-      '/public/lovable-uploads/b4fd900d-0cdf-44ea-8615-4e0c3f57b4d0.png'
+      '/lovable-uploads/5cb8074a-ef41-42af-831e-61b13dd7de02.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black'],
@@ -296,9 +296,9 @@ export const products = [
     description: 'Stylish black and white geometric print blazer, perfect for making a fashion statement.',
     price: 4500,
     category: 'women',
-    image: '/public/lovable-uploads/f6cbdb3f-75ff-4639-959b-f50700867524.png',
+    image: '/lovable-uploads/d48f9645-7c6a-411e-868e-5fa03fe8055a.png',
     images: [
-      '/public/lovable-uploads/f6cbdb3f-75ff-4639-959b-f50700867524.png'
+      '/lovable-uploads/d48f9645-7c6a-411e-868e-5fa03fe8055a.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Black/White'],
@@ -315,9 +315,9 @@ export const products = [
     description: 'Warm and stylish royal blue winter coat with fur collar detail.',
     price: 7200,
     category: 'women',
-    image: '/public/lovable-uploads/4985348f-71b5-4c86-b9b1-35a3059284be.png',
+    image: '/lovable-uploads/de183be4-0d91-471f-8a2b-1ad6a46ac0fe.png',
     images: [
-      '/public/lovable-uploads/4985348f-71b5-4c86-b9b1-35a3059284be.png'
+      '/lovable-uploads/de183be4-0d91-471f-8a2b-1ad6a46ac0fe.png'
     ],
     sizes: ['S', 'M', 'L'],
     colors: ['Blue'],
@@ -334,9 +334,9 @@ export const products = [
     description: 'Flowing emerald green dress with wide sleeves and gold accessory detail.',
     price: 5500,
     category: 'dresses',
-    image: '/public/lovable-uploads/ec773571-e555-44f7-a781-51bdba59a995.png',
+    image: '/lovable-uploads/9ad9ae97-de2e-42ed-a29e-6e08a1600dd6.png',
     images: [
-      '/public/lovable-uploads/ec773571-e555-44f7-a781-51bdba59a995.png'
+      '/lovable-uploads/9ad9ae97-de2e-42ed-a29e-6e08a1600dd6.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
     colors: ['Emerald Green'],
@@ -353,9 +353,9 @@ export const products = [
     description: 'Vibrant dress featuring yellow and gold tropical leaf print, perfect for summer occasions.',
     price: 4800,
     category: 'dresses',
-    image: '/public/lovable-uploads/6efe455b-f332-4ceb-bec3-892e0091601a.png',
+    image: '/lovable-uploads/90493f64-dcbf-48fe-ac18-1815f2ebb412.png',
     images: [
-      '/public/lovable-uploads/6efe455b-f332-4ceb-bec3-892e0091601a.png'
+      '/lovable-uploads/90493f64-dcbf-48fe-ac18-1815f2ebb412.png'
     ],
     sizes: ['S', 'M', 'L'],
     colors: ['White/Yellow'],
@@ -372,9 +372,9 @@ export const products = [
     description: 'Bold and beautiful neon green kaftan dress with black pattern, perfect for making a statement.',
     price: 6500,
     category: 'dresses',
-    image: '/public/lovable-uploads/2a2e429e-fe7a-4d1b-a4bc-68c1e51cd252.png',
+    image: '/lovable-uploads/d62448f0-bd29-4042-8d98-86953249d7b6.png',
     images: [
-      '/public/lovable-uploads/2a2e429e-fe7a-4d1b-a4bc-68c1e51cd252.png'
+      '/lovable-uploads/d62448f0-bd29-4042-8d98-86953249d7b6.png'
     ],
     sizes: ['S/M', 'L/XL'],
     colors: ['Neon Green/Black'],
@@ -391,9 +391,9 @@ export const products = [
     description: 'Elegant black dress with colorful floral pattern and belted design.',
     price: 5200,
     category: 'dresses',
-    image: '/public/lovable-uploads/f273f5e5-d285-4a66-8661-d0f7847e31a3.png',
+    image: '/lovable-uploads/c6dcc27f-776b-4b38-84c2-775c0d4d8c27.png',
     images: [
-      '/public/lovable-uploads/f273f5e5-d285-4a66-8661-d0f7847e31a3.png'
+      '/lovable-uploads/c6dcc27f-776b-4b38-84c2-775c0d4d8c27.png'
     ],
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     colors: ['Black/Floral'],

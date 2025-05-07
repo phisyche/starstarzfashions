@@ -41,7 +41,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-6 md:gap-10">
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/c2cf926c-dd1c-444a-bdeb-064d8ffca83f.png" 
+              src="/lovable-uploads/c6dcc27f-776b-4b38-84c2-775c0d4d8c27.png" 
               alt="Star Starz Fashions" 
               className="h-10 w-auto" 
             />
