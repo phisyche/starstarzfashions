@@ -40,6 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ShoppingBag, Heart, Package, UserIcon, AlertCircle, Settings, CreditCard, LogOut, Mail, User } from 'lucide-react';
 import { from } from '@/integrations/supabase/client';
+import { AccountDashboard } from '@/components/account/account-dashboard';
 
 interface AddressData {
   line1: string;
@@ -62,7 +63,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function AccountPage() {
-  const [tab, setTab] = useState('profile');
+  const [tab, setTab] = useState('dashboard'); // Changed default tab to dashboard
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
   const [profileData, setProfileData] = useState<any>(null);
@@ -270,10 +271,14 @@ export default function AccountPage() {
       
       <div className="container max-w-6xl py-8">
         <Tabs value={tab} onValueChange={setTab} className="space-y-8">
-          <div className="flex justify-between border-b">
-            <TabsList className="grid grid-cols-3 w-full sm:w-auto">
-              <TabsTrigger value="profile" className="flex gap-2 items-center">
+          <div className="flex justify-between border-b overflow-x-auto">
+            <TabsList className="grid grid-cols-4 w-full sm:w-auto">
+              <TabsTrigger value="dashboard" className="flex gap-2 items-center">
                 <UserIcon className="w-4 h-4" />
+                <span>Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="flex gap-2 items-center">
+                <User className="w-4 h-4" />
                 <span>Profile</span>
               </TabsTrigger>
               <TabsTrigger value="orders" className="flex gap-2 items-center">
@@ -286,6 +291,21 @@ export default function AccountPage() {
               </TabsTrigger>
             </TabsList>
           </div>
+          
+          {/* New Dashboard Tab */}
+          <TabsContent value="dashboard">
+            {loading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-48 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-64 w-full" />
+                </div>
+              </div>
+            ) : (
+              <AccountDashboard userData={profileData} />
+            )}
+          </TabsContent>
           
           <TabsContent value="profile" className="space-y-6">
             <Card>

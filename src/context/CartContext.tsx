@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -8,10 +9,13 @@ import React, {
 
 export interface CartItem {
   productId: string;
+  id: string; // Added id field for the cart item
   quantity: number;
   price: number;
   name: string;
   image: string;
+  size?: string; // Made size optional
+  color?: string; // Made color optional
 }
 
 export interface CartContextType {
@@ -23,6 +27,7 @@ export interface CartContextType {
   getItem: (productId: string) => CartItem | undefined;
   itemCount: number;
   calculateTotal: () => number;
+  subtotal: number; // Added subtotal property
 }
 
 export const CartContext = createContext<CartContextType>({
@@ -34,6 +39,7 @@ export const CartContext = createContext<CartContextType>({
   getItem: () => undefined,
   itemCount: 0,
   calculateTotal: () => 0,
+  subtotal: 0, // Added initial value for subtotal
 });
 
 export const useCart = () => useContext(CartContext);
@@ -59,7 +65,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           item.productId === productId ? { ...item, quantity: item.quantity + quantity } : item
         );
       } else {
-        return [...prevItems, { productId, quantity, price: product.price, name: product.name, image: product.image }];
+        return [...prevItems, { 
+          id: `cart-item-${Date.now()}`, // Generate unique ID for cart item
+          productId, 
+          quantity, 
+          price: product.price, 
+          name: product.name, 
+          image: product.image,
+          size: product.size,
+          color: product.color
+        }];
       }
     });
   };
@@ -100,6 +115,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return items.reduce((count, item) => count + item.quantity, 0);
   }, [items]);
 
+  // Calculate subtotal
+  const subtotal = useMemo(() => {
+    return calculateTotal();
+  }, [items]);
+
   return (
     <CartContext.Provider
       value={{
@@ -111,6 +131,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getItem,
         itemCount,
         calculateTotal,
+        subtotal,
       }}
     >
       {children}
