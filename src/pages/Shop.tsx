@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -326,7 +325,6 @@ export default function Shop() {
                     <ProductCard
                       key={product.id}
                       product={product}
-                      layout={viewMode}
                     />
                   ))}
                 </div>

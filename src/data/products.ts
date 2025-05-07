@@ -1,4 +1,17 @@
-// Mocked collections data for display
+
+// Categories data
+export const categories = [
+  { id: '1', name: 'Men', slug: 'men', image: '/placeholder-category.jpg' },
+  { id: '2', name: 'Women', slug: 'women', image: '/placeholder-category.jpg' },
+  { id: '3', name: 'Dresses', slug: 'dresses', image: '/placeholder-category.jpg' },
+  { id: '4', name: 'Tops', slug: 'tops', image: '/placeholder-category.jpg' },
+  { id: '5', name: 'Trousers', slug: 'trousers', image: '/placeholder-category.jpg' },
+  { id: '6', name: 'Bags', slug: 'bags', image: '/placeholder-category.jpg' },
+  { id: '7', name: 'T-Shirts', slug: 't-shirts', image: '/placeholder-category.jpg' },
+  { id: '8', name: 'Shoes', slug: 'shoes', image: '/placeholder-category.jpg' }
+];
+
+// Collections data 
 export const collections = [
   {
     id: '1',
@@ -37,68 +50,49 @@ export const collections = [
   }
 ];
 
-// Mocked categories data
-export const categories = [
-  { id: '1', name: 'Men', slug: 'men', image: '/placeholder-category.jpg' },
-  { id: '2', name: 'Women', slug: 'women', image: '/placeholder-category.jpg' },
-  { id: '3', name: 'Dresses', slug: 'dresses', image: '/placeholder-category.jpg' },
-  { id: '4', name: 'Tops', slug: 'tops', image: '/placeholder-category.jpg' },
-  { id: '5', name: 'Trousers', slug: 'trousers', image: '/placeholder-category.jpg' },
-  { id: '6', name: 'Bags', slug: 'bags', image: '/placeholder-category.jpg' },
-  { id: '7', name: 'T-Shirts', slug: 't-shirts', image: '/placeholder-category.jpg' },
-  { id: '8', name: 'Shoes', slug: 'shoes', image: '/placeholder-category.jpg' }
-];
-
-// Helper function to get products by category
+// Helper functions
 export const getProductsByCategory = (category: string) => {
-  return mockedProducts.filter(product => product.category === category);
+  return products.filter(product => product.category === category);
 };
 
-// Helper function to get products by collection
 export const getProductsByCollection = (collectionSlug: string) => {
-  // In a real app, this would filter by a collection-product relationship
-  // For now, return some random products
-  return mockedProducts.slice(0, 8);
+  return products.slice(0, 8);
 };
 
-// Mocked products data
-export const mockedProducts = [
+// Products data with new images
+export const products = [
   {
     id: '1',
-    name: 'Classic White T-Shirt',
-    slug: 'classic-white-t-shirt',
-    description: 'A comfortable and versatile white t-shirt made from 100% cotton.',
-    price: 1200,
-    category: 'men',
-    image: '/products/tshirt1.jpg',
+    name: 'Lavender Velvet Tracksuit',
+    slug: 'lavender-velvet-tracksuit',
+    description: 'Luxurious lavender velvet tracksuit featuring a comfortable fit and premium quality fabric.',
+    price: 3500,
+    category: 'women',
+    image: '/public/lovable-uploads/f11b9b38-0082-4d5a-8ff2-360448907bb1.png',
     images: [
-      '/products/tshirt1.jpg',
-      '/products/tshirt1-2.jpg',
-      '/products/tshirt1-3.jpg'
+      '/public/lovable-uploads/f11b9b38-0082-4d5a-8ff2-360448907bb1.png'
     ],
     sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['White', 'Black', 'Gray'],
+    colors: ['Lavender', 'Black', 'Gray'],
     isFeatured: true,
-    isNew: false,
+    isNew: true,
     isSale: false,
     discountPercent: 0,
-    stock: 50
+    stock: 25
   },
   {
     id: '2',
-    name: 'Floral Summer Dress',
-    slug: 'floral-summer-dress',
-    description: 'A beautiful floral dress perfect for summer days.',
-    price: 2500,
+    name: 'Mint Green Graphic Tee & Floral Pants',
+    slug: 'mint-green-graphic-tee-floral-pants',
+    description: 'Stylish mint green t-shirt with graphic design paired with elegant floral print pants.',
+    price: 4200,
     category: 'women',
-    image: '/products/dress1.jpg',
+    image: '/public/lovable-uploads/e1e38f46-27ba-47fe-b3cf-ac333b7a7cf6.png',
     images: [
-      '/products/dress1.jpg',
-      '/products/dress1-2.jpg',
-      '/products/dress1-3.jpg'
+      '/public/lovable-uploads/e1e38f46-27ba-47fe-b3cf-ac333b7a7cf6.png'
     ],
     sizes: ['XS', 'S', 'M', 'L'],
-    colors: ['Blue', 'Pink'],
+    colors: ['Mint Green/Black'],
     isFeatured: true,
     isNew: true,
     isSale: false,
@@ -107,103 +101,55 @@ export const mockedProducts = [
   },
   {
     id: '3',
-    name: 'Leather Crossbody Bag',
-    slug: 'leather-crossbody-bag',
-    description: 'A stylish leather crossbody bag with multiple compartments.',
-    price: 3500,
-    category: 'bags',
-    image: '/products/bag1.jpg',
+    name: 'Designer Tracksuit Collection',
+    slug: 'designer-tracksuit-collection',
+    description: 'Premium designer tracksuits in exclusive patterns and colors, perfect for fashion-forward looks.',
+    price: 6800,
+    category: 'women',
+    image: '/public/lovable-uploads/afefaa6a-9ac2-4d38-a0a5-0a6aec428ce2.png',
     images: [
-      '/products/bag1.jpg',
-      '/products/bag1-2.jpg',
-      '/products/bag1-3.jpg'
+      '/public/lovable-uploads/afefaa6a-9ac2-4d38-a0a5-0a6aec428ce2.png'
     ],
-    sizes: ['One Size'],
-    colors: ['Brown', 'Black'],
-    isFeatured: false,
-    isNew: false,
-    isSale: true,
-    discountPercent: 15,
-    stock: 20
-  },
-  {
-    id: '4',
-    name: 'Slim Fit Jeans',
-    slug: 'slim-fit-jeans',
-    description: 'Comfortable slim fit jeans made from high-quality denim.',
-    price: 2800,
-    category: 'men',
-    image: '/products/jeans1.jpg',
-    images: [
-      '/products/jeans1.jpg',
-      '/products/jeans1-2.jpg',
-      '/products/jeans1-3.jpg'
-    ],
-    sizes: ['30', '32', '34', '36'],
-    colors: ['Blue', 'Black'],
-    isFeatured: false,
-    isNew: false,
-    isSale: false,
-    discountPercent: 0,
-    stock: 40
-  },
-  {
-    id: '5',
-    name: 'Running Shoes',
-    slug: 'running-shoes',
-    description: 'Lightweight and comfortable running shoes with excellent support.',
-    price: 4500,
-    category: 'shoes',
-    image: '/products/shoes1.jpg',
-    images: [
-      '/products/shoes1.jpg',
-      '/products/shoes1-2.jpg',
-      '/products/shoes1-3.jpg'
-    ],
-    sizes: ['40', '41', '42', '43', '44'],
-    colors: ['Black/Red', 'Blue/White', 'Gray/Green'],
+    sizes: ['S', 'M', 'L'],
+    colors: ['Green/Black', 'Gold/Brown'],
     isFeatured: true,
     isNew: true,
     isSale: false,
     discountPercent: 0,
-    stock: 25
+    stock: 15
   },
   {
-    id: '6',
-    name: 'Casual Blouse',
-    slug: 'casual-blouse',
-    description: 'A lightweight and comfortable blouse for everyday wear.',
-    price: 1800,
-    category: 'tops',
-    image: '/products/blouse1.jpg',
-    images: [
-      '/products/blouse1.jpg',
-      '/products/blouse1-2.jpg',
-      '/products/blouse1-3.jpg'
-    ],
-    sizes: ['XS', 'S', 'M', 'L', 'XL'],
-    colors: ['White', 'Blue', 'Pink'],
-    isFeatured: false,
-    isNew: false,
-    isSale: true,
-    discountPercent: 20,
-    stock: 35
-  },
-  {
-    id: '7',
-    name: 'Formal Suit',
-    slug: 'formal-suit',
-    description: 'A classic formal suit for business and special occasions.',
-    price: 12000,
+    id: '4',
+    name: 'Men\'s Grey Tracksuit',
+    slug: 'mens-grey-tracksuit',
+    description: 'Men\'s classic grey tracksuit with matching vest, perfect for casual and sports wear.',
+    price: 4800,
     category: 'men',
-    image: '/products/suit1.jpg',
+    image: '/public/lovable-uploads/7dd5f6af-ce49-478d-9cb5-7dafbeb4b72b.png',
     images: [
-      '/products/suit1.jpg',
-      '/products/suit1-2.jpg',
-      '/products/suit1-3.jpg'
+      '/public/lovable-uploads/7dd5f6af-ce49-478d-9cb5-7dafbeb4b72b.png'
     ],
-    sizes: ['48', '50', '52', '54'],
-    colors: ['Black', 'Navy', 'Gray'],
+    sizes: ['M', 'L', 'XL', 'XXL'],
+    colors: ['Grey'],
+    isFeatured: false,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 20
+  },
+  {
+    id: '5',
+    name: 'Designer Leopard Print Set',
+    slug: 'designer-leopard-print-set',
+    description: 'Fashionable black set with leopard print design elements. Includes top and pants.',
+    price: 5500,
+    category: 'women',
+    image: '/public/lovable-uploads/abc1f9a9-6a87-410e-bf4d-13de257e3e72.png',
+    images: [
+      '/public/lovable-uploads/abc1f9a9-6a87-410e-bf4d-13de257e3e72.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black/Leopard Print'],
     isFeatured: true,
     isNew: false,
     isSale: false,
@@ -211,20 +157,227 @@ export const mockedProducts = [
     stock: 15
   },
   {
-    id: '8',
-    name: 'Evening Gown',
-    slug: 'evening-gown',
-    description: 'An elegant evening gown for formal events and celebrations.',
-    price: 15000,
+    id: '6',
+    name: 'Elegant Black Mesh Dress',
+    slug: 'elegant-black-mesh-dress',
+    description: 'Sophisticated black dress with mesh detail and gold star pattern, perfect for special occasions.',
+    price: 4800,
     category: 'dresses',
-    image: '/products/gown1.jpg',
+    image: '/public/lovable-uploads/7bf4f2b0-a8c7-4da6-a89b-7ebc204ecaaa.png',
     images: [
-      '/products/gown1.jpg',
-      '/products/gown1-2.jpg',
-      '/products/gown1-3.jpg'
+      '/public/lovable-uploads/7bf4f2b0-a8c7-4da6-a89b-7ebc204ecaaa.png'
     ],
-    sizes: ['XS', 'S', 'M', 'L'],
-    colors: ['Red', 'Black', 'Gold'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    colors: ['Black'],
+    isFeatured: true,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 20
+  },
+  {
+    id: '7',
+    name: 'Women\'s Formal Business Suit',
+    slug: 'womens-formal-business-suit',
+    description: 'Professional black business suit for women with skirt, perfect for office and formal settings.',
+    price: 7500,
+    category: 'women',
+    image: '/public/lovable-uploads/906fcc7b-40a6-4a82-b744-48caccb15b87.png',
+    images: [
+      '/public/lovable-uploads/906fcc7b-40a6-4a82-b744-48caccb15b87.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black'],
+    isFeatured: false,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 25
+  },
+  {
+    id: '8',
+    name: 'Men\'s Grey Formal Suit',
+    slug: 'mens-grey-formal-suit',
+    description: 'Classic grey formal suit for men with vest and white shirt, perfect for business and special occasions.',
+    price: 12000,
+    category: 'men',
+    image: '/public/lovable-uploads/42efd527-3543-499c-ae64-527c63001e6c.png',
+    images: [
+      '/public/lovable-uploads/42efd527-3543-499c-ae64-527c63001e6c.png'
+    ],
+    sizes: ['48', '50', '52', '54'],
+    colors: ['Grey'],
+    isFeatured: true,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 15
+  },
+  {
+    id: '9',
+    name: 'Varsity Hoodie Set',
+    slug: 'varsity-hoodie-set',
+    description: 'Comfortable and stylish varsity hoodie set for casual wear.',
+    price: 4500,
+    category: 'men',
+    image: '/public/lovable-uploads/113f92d4-15c6-4d2a-a924-bb20fefe115e.png',
+    images: [
+      '/public/lovable-uploads/113f92d4-15c6-4d2a-a924-bb20fefe115e.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Blue/Grey', 'Black/Grey'],
+    isFeatured: true,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 30
+  },
+  {
+    id: '10',
+    name: 'Men\'s Blue Formal Suit',
+    slug: 'mens-blue-formal-suit',
+    description: 'Elegant blue formal suit for men, ideal for special occasions and professional settings.',
+    price: 13000,
+    category: 'men',
+    image: '/public/lovable-uploads/efe27d21-4b5c-49bc-8ef7-d76541972638.png',
+    images: [
+      '/public/lovable-uploads/efe27d21-4b5c-49bc-8ef7-d76541972638.png'
+    ],
+    sizes: ['48', '50', '52', '54'],
+    colors: ['Blue'],
+    isFeatured: false,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 10
+  },
+  {
+    id: '11',
+    name: 'Royal Blue Elegant Dress',
+    slug: 'royal-blue-elegant-dress',
+    description: 'Stunning royal blue dress with layered design and button detail, perfect for special occasions.',
+    price: 5800,
+    category: 'dresses',
+    image: '/public/lovable-uploads/f38d8a00-0c3e-4535-b4a0-5d27606c328b.png',
+    images: [
+      '/public/lovable-uploads/f38d8a00-0c3e-4535-b4a0-5d27606c328b.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    colors: ['Royal Blue'],
+    isFeatured: true,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 15
+  },
+  {
+    id: '12',
+    name: 'Black Pearl Dress',
+    slug: 'black-pearl-dress',
+    description: 'Elegant black dress with see-through pearl-studded sleeves for a sophisticated evening look.',
+    price: 6200,
+    category: 'dresses',
+    image: '/public/lovable-uploads/b4fd900d-0cdf-44ea-8615-4e0c3f57b4d0.png',
+    images: [
+      '/public/lovable-uploads/b4fd900d-0cdf-44ea-8615-4e0c3f57b4d0.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black'],
+    isFeatured: false,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 20
+  },
+  {
+    id: '13',
+    name: 'Geometric Print Blazer',
+    slug: 'geometric-print-blazer',
+    description: 'Stylish black and white geometric print blazer, perfect for making a fashion statement.',
+    price: 4500,
+    category: 'women',
+    image: '/public/lovable-uploads/f6cbdb3f-75ff-4639-959b-f50700867524.png',
+    images: [
+      '/public/lovable-uploads/f6cbdb3f-75ff-4639-959b-f50700867524.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black/White'],
+    isFeatured: true,
+    isNew: false,
+    isSale: false,
+    discountPercent: 0,
+    stock: 15
+  },
+  {
+    id: '14',
+    name: 'Blue Winter Coat',
+    slug: 'blue-winter-coat',
+    description: 'Warm and stylish royal blue winter coat with fur collar detail.',
+    price: 7200,
+    category: 'women',
+    image: '/public/lovable-uploads/4985348f-71b5-4c86-b9b1-35a3059284be.png',
+    images: [
+      '/public/lovable-uploads/4985348f-71b5-4c86-b9b1-35a3059284be.png'
+    ],
+    sizes: ['S', 'M', 'L'],
+    colors: ['Blue'],
+    isFeatured: false,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 12
+  },
+  {
+    id: '15',
+    name: 'Emerald Green Dress',
+    slug: 'emerald-green-dress',
+    description: 'Flowing emerald green dress with wide sleeves and gold accessory detail.',
+    price: 5500,
+    category: 'dresses',
+    image: '/public/lovable-uploads/ec773571-e555-44f7-a781-51bdba59a995.png',
+    images: [
+      '/public/lovable-uploads/ec773571-e555-44f7-a781-51bdba59a995.png'
+    ],
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Emerald Green'],
+    isFeatured: true,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 18
+  },
+  {
+    id: '16',
+    name: 'Tropical Leaf Print Dress',
+    slug: 'tropical-leaf-print-dress',
+    description: 'Vibrant dress featuring yellow and gold tropical leaf print, perfect for summer occasions.',
+    price: 4800,
+    category: 'dresses',
+    image: '/public/lovable-uploads/6efe455b-f332-4ceb-bec3-892e0091601a.png',
+    images: [
+      '/public/lovable-uploads/6efe455b-f332-4ceb-bec3-892e0091601a.png'
+    ],
+    sizes: ['S', 'M', 'L'],
+    colors: ['White/Yellow'],
+    isFeatured: false,
+    isNew: true,
+    isSale: false,
+    discountPercent: 0,
+    stock: 20
+  },
+  {
+    id: '17',
+    name: 'Neon Green Kaftan Dress',
+    slug: 'neon-green-kaftan-dress',
+    description: 'Bold and beautiful neon green kaftan dress with black pattern, perfect for making a statement.',
+    price: 6500,
+    category: 'dresses',
+    image: '/public/lovable-uploads/2a2e429e-fe7a-4d1b-a4bc-68c1e51cd252.png',
+    images: [
+      '/public/lovable-uploads/2a2e429e-fe7a-4d1b-a4bc-68c1e51cd252.png'
+    ],
+    sizes: ['S/M', 'L/XL'],
+    colors: ['Neon Green/Black'],
     isFeatured: true,
     isNew: true,
     isSale: false,
@@ -232,87 +385,36 @@ export const mockedProducts = [
     stock: 10
   },
   {
-    id: '9',
-    name: 'Casual Chinos',
-    slug: 'casual-chinos',
-    description: 'Comfortable and stylish chinos for a casual look.',
-    price: 2200,
-    category: 'trousers',
-    image: '/products/chinos1.jpg',
+    id: '18',
+    name: 'Floral Pattern Dress',
+    slug: 'floral-pattern-dress',
+    description: 'Elegant black dress with colorful floral pattern and belted design.',
+    price: 5200,
+    category: 'dresses',
+    image: '/public/lovable-uploads/f273f5e5-d285-4a66-8661-d0f7847e31a3.png',
     images: [
-      '/products/chinos1.jpg',
-      '/products/chinos1-2.jpg',
-      '/products/chinos1-3.jpg'
+      '/public/lovable-uploads/f273f5e5-d285-4a66-8661-d0f7847e31a3.png'
     ],
-    sizes: ['30', '32', '34', '36', '38'],
-    colors: ['Beige', 'Navy', 'Olive'],
-    isFeatured: false,
-    isNew: false,
-    isSale: false,
-    discountPercent: 0,
-    stock: 30
-  },
-  {
-    id: '10',
-    name: 'Tote Bag',
-    slug: 'tote-bag',
-    description: 'A spacious and durable tote bag for everyday use.',
-    price: 1800,
-    category: 'bags',
-    image: '/products/tote1.jpg',
-    images: [
-      '/products/tote1.jpg',
-      '/products/tote1-2.jpg',
-      '/products/tote1-3.jpg'
-    ],
-    sizes: ['One Size'],
-    colors: ['Black', 'Brown', 'Canvas'],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    colors: ['Black/Floral'],
     isFeatured: false,
     isNew: true,
     isSale: false,
     discountPercent: 0,
     stock: 25
-  },
-  {
-    id: '11',
-    name: 'Graphic T-Shirt',
-    slug: 'graphic-t-shirt',
-    description: 'A cool graphic t-shirt with unique design.',
-    price: 1500,
-    category: 't-shirts',
-    image: '/products/graphic-tee1.jpg',
-    images: [
-      '/products/graphic-tee1.jpg',
-      '/products/graphic-tee1-2.jpg',
-      '/products/graphic-tee1-3.jpg'
-    ],
-    sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['White', 'Black', 'Gray'],
-    isFeatured: false,
-    isNew: false,
-    isSale: true,
-    discountPercent: 10,
-    stock: 40
-  },
-  {
-    id: '12',
-    name: 'Ankle Boots',
-    slug: 'ankle-boots',
-    description: 'Stylish ankle boots that go with any outfit.',
-    price: 3800,
-    category: 'shoes',
-    image: '/products/boots1.jpg',
-    images: [
-      '/products/boots1.jpg',
-      '/products/boots1-2.jpg',
-      '/products/boots1-3.jpg'
-    ],
-    sizes: ['36', '37', '38', '39', '40'],
-    colors: ['Black', 'Brown', 'Tan'],
-    isFeatured: true,
-    isNew: false,
-    isSale: false,
-    discountPercent: 0,
-    stock: 20
   }
+];
+
+// Derived data for home page sections
+export const featuredProducts = products.filter(product => product.isFeatured).slice(0, 8);
+export const newArrivals = products.filter(product => product.isNew).slice(0, 8);
+export const bestSellers = [
+  products[0],
+  products[1],
+  products[2],
+  products[5],
+  products[7],
+  products[10],
+  products[14],
+  products[16],
 ];

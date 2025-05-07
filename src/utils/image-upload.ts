@@ -28,7 +28,7 @@ export const uploadImage = async (file: File): Promise<string> => {
     const filePath = `${folderPath}/${fileName}`;
 
     // Upload to lovable-uploads storage
-    const { error } = await supabase.storage
+    const { error, data } = await supabase.storage
       .from('lovable-uploads')
       .upload(filePath, file, {
         cacheControl: '3600',
@@ -39,7 +39,16 @@ export const uploadImage = async (file: File): Promise<string> => {
       throw error;
     }
 
-    // Return the public URL
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('lovable-uploads')
+      .getPublicUrl(filePath);
+
+    if (publicUrlData && publicUrlData.publicUrl) {
+      return publicUrlData.publicUrl;
+    }
+
+    // Fallback to the old path format for compatibility
     return `/public/lovable-uploads/${fileName}`;
   } catch (error) {
     console.error('Error uploading file:', error);
@@ -64,6 +73,11 @@ export const organizeImages = async (
     return images.map(image => {
       // Skip already organized images
       if (image.includes(`/${categoryFolder}/`)) {
+        return image;
+      }
+      
+      // Skip URLs that are already full URLs
+      if (image.startsWith('http')) {
         return image;
       }
       

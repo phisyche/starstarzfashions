@@ -10,9 +10,9 @@ export default function CollectionDetail() {
   const { slug } = useParams<{ slug: string }>();
   const collection = collections.find(c => c.slug === slug);
   
-  // Filter products for this collection (in a real app, this would be based on relations in the database)
-  // For demo purposes, we'll show random products
-  const collectionProducts = products.slice(0, 6);
+  // For demo purposes, show a selection of products
+  // In a real app, this would filter based on collection relationships
+  const collectionProducts = products.slice(0, 8);
   
   if (!collection) {
     return (
@@ -50,10 +50,9 @@ export default function CollectionDetail() {
         </div>
       </div>
 
-      <section className="py-16">
+      <section className="py-10">
         <div className="container">
-          <h2 className="text-2xl font-bold mb-8">Products in this Collection</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {collectionProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

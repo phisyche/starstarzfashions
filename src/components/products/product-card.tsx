@@ -20,16 +20,91 @@ export interface ProductType {
   slug: string;
 }
 
-interface ProductCardProps {
+export interface ProductCardProps {
   product: ProductType;
+  layout?: 'grid' | 'list';
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   
   const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
     : 0;
+
+  if (layout === 'list') {
+    return (
+      <Card className="flex flex-row h-full overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300">
+        <Link to={`/product/${product.slug}`} className="w-1/3">
+          <div className="aspect-square overflow-hidden bg-gray-50 relative h-full">
+            <img 
+              src={product.image} 
+              alt={product.name}
+              className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+        </Link>
+        <div className="w-2/3 flex flex-col">
+          <CardContent className="p-3 space-y-1 flex-1">
+            <div className="text-xs text-muted-foreground">{product.category}</div>
+            <Link to={`/product/${product.slug}`}>
+              <h3 className="font-medium text-lg line-clamp-1 hover:text-theme-pink transition-colors">
+                {product.name}
+              </h3>
+            </Link>
+            <div className="flex items-center space-x-2">
+              <Price amount={product.price} className="text-lg font-semibold" />
+              {product.originalPrice && (
+                <span className="text-muted-foreground line-through text-sm">
+                  KES {product.originalPrice}
+                </span>
+              )}
+            </div>
+            <p className="text-muted-foreground text-sm line-clamp-2 mt-2">
+              {product.name} - Available in multiple sizes.
+            </p>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {product.isNew && (
+                <Badge className="bg-theme-pink text-white">
+                  New
+                </Badge>
+              )}
+              {product.originalPrice && (
+                <Badge variant="outline" className="bg-theme-blue text-white">
+                  {discountPercentage}% OFF
+                </Badge>
+              )}
+              {product.isBestSeller && (
+                <Badge className="bg-amber-500 text-white">
+                  Best Seller
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter className="p-3 pt-0 flex gap-2">
+            <Button 
+              className="flex-1 bg-theme-blue hover:bg-theme-pink transition-colors"
+              size="sm"
+            >
+              <ShoppingCart className="h-4 w-4 mr-1" />
+              Add to Cart
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-theme-pink hover:bg-theme-pink/10"
+              asChild
+            >
+              <Link to={`/product/${product.slug}`}>
+                <Eye className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card 
