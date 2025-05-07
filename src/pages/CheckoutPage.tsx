@@ -28,7 +28,7 @@ import {
 import { products } from "@/data/products";
 
 export default function CheckoutPage() {
-  const { cartItems, clearCart, calculateTotalPrice } = useCart();
+  const { items: cartItems, clearCart, calculateTotal } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -165,7 +165,7 @@ export default function CheckoutPage() {
                     <TableRow>
                       <TableCell colSpan={3}>Total</TableCell>
                       <TableCell className="text-right">
-                        KES {calculateTotalPrice().toLocaleString()}
+                        KES {calculateTotal().toLocaleString()}
                       </TableCell>
                     </TableRow>
                   </TableFooter>

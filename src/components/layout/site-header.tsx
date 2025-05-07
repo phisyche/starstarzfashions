@@ -40,8 +40,11 @@ export function SiteHeader() {
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-6 md:gap-10">
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="StarStarz" className="h-10 w-auto" />
-            <span className="inline-block font-bold text-xl">StarStarz</span>
+            <img 
+              src="/lovable-uploads/c2cf926c-dd1c-444a-bdeb-064d8ffca83f.png" 
+              alt="Star Starz Fashions" 
+              className="h-10 w-auto" 
+            />
           </Link>
           
           <nav className="hidden md:flex gap-6">

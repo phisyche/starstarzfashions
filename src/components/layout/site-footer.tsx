@@ -8,8 +8,7 @@ export function SiteFooter() {
         <div>
           <h3 className="text-xl font-bold mb-4">Star <span className="text-kenya-red">Starz</span> Fashions</h3>
           <p className="text-gray-300 mb-4">
-            Premium fashion and style delivered with excellence. 
-            Showcasing unique designs and quality craftsmanship from Kenya.
+            Star Starz Fashions is a contemporary clothing store for both women and men. We aim to provide special, unique pieces for our savy customers. Every piece we choose and every line we carry is chosen in respect to its quality and inspired design, with the goal that these special pieces will aid in the development of our customer's personal aesthetic.
           </p>
           <div className="flex space-x-4">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors">
@@ -74,15 +73,19 @@ export function SiteFooter() {
         <div>
           <h4 className="font-semibold text-lg mb-4">Contact Us</h4>
           <address className="not-italic text-gray-300">
-            <p className="mb-2">123 Fashion Avenue, Nairobi, Kenya</p>
+            <p className="mb-2">
+              Akai Plaza Ground Floor,<br />
+              Office No 2 At Rosters<br />
+              Off Thika Superhighway Next to Mountain Mall
+            </p>
             <p className="mb-2">
               <a href="mailto:info@starstarzfashions.com" className="hover:text-white transition-colors">
                 info@starstarzfashions.com
               </a>
             </p>
             <p className="mb-2">
-              <a href="tel:+254712345678" className="hover:text-white transition-colors">
-                +254 712 345 678
+              <a href="tel:+254745025502" className="hover:text-white transition-colors">
+                0745 02 55 02 | 0722 430 359
               </a>
             </p>
           </address>
