@@ -33,14 +33,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabase } from '@/context/SupabaseContext';
+import { useFavorites } from '@/context/FavoritesContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Price } from '@/components/ui/price';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ShoppingBag, Heart, Package, UserIcon, AlertCircle, Settings, CreditCard, LogOut, Mail, User } from 'lucide-react';
+import { ShoppingBag, Heart, HeartOff, Package, User as UserIcon, AlertCircle, Settings, CreditCard, LogOut, Mail, User, Eye, Edit, Trash2 } from 'lucide-react';
 import { from } from '@/integrations/supabase/client';
 import { AccountDashboard } from '@/components/account/account-dashboard';
+import { formatDate, cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AddressData {
   line1: string;
@@ -63,11 +66,14 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function AccountPage() {
-  const [tab, setTab] = useState('dashboard'); // Changed default tab to dashboard
+  const [tab, setTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
   const [profileData, setProfileData] = useState<any>(null);
-  const { user, supabase, signOut } = useSupabase();
+  const [updatingEmail, setUpdatingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const { user, supabase, signOut, updateEmail } = useSupabase();
+  const { favorites, loading: favLoading, removeFromFavorites } = useFavorites();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -129,6 +135,9 @@ export default function AccountPage() {
           county: address.county || '',
           postal_code: address.postal_code || '',
         });
+        
+        // Set email for potential update
+        setNewEmail(user.email || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -142,46 +151,35 @@ export default function AccountPage() {
     }
   };
   
-  // Fetch user orders - using mock data for now as we wait for orders table in the DB
+  // Fetch user orders from Supabase
   const fetchOrders = async () => {
-    setOrders([
-      {
-        id: 'ORD-001',
-        created_at: new Date().toISOString(),
-        status: 'delivered',
-        payment_status: 'paid',
-        total_amount: 2500,
-        order_items: [
-          {
-            id: 'ITEM-001',
-            product_name: 'Summer Dress',
-            price: 1200,
-            quantity: 1
-          },
-          {
-            id: 'ITEM-002',
-            product_name: 'Casual Shoes',
-            price: 1300,
-            quantity: 1
-          }
-        ]
-      },
-      {
-        id: 'ORD-002',
-        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'processing',
-        payment_status: 'paid',
-        total_amount: 4500,
-        order_items: [
-          {
-            id: 'ITEM-003',
-            product_name: 'Leather Bag',
-            price: 4500,
-            quantity: 1
-          }
-        ]
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      // Try to fetch orders from Supabase
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items(*)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching orders:", error);
+        setOrders([]);
+      } else {
+        setOrders(data || []);
       }
-    ]);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Handle profile update
@@ -230,9 +228,44 @@ export default function AccountPage() {
     }
   };
   
+  // Handle email update
+  const handleEmailUpdate = async () => {
+    if (!user || !supabase || !newEmail) return;
+    
+    if (newEmail === user.email) {
+      toast({
+        title: 'No change',
+        description: 'Your email address is already set to this value.',
+      });
+      return;
+    }
+    
+    try {
+      setUpdatingEmail(true);
+      await updateEmail(newEmail);
+    } catch (error) {
+      console.error('Error updating email:', error);
+    } finally {
+      setUpdatingEmail(false);
+    }
+  };
+  
   const handleLogout = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to sign out. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleRemoveFavorite = async (productId: string) => {
+    await removeFromFavorites(productId);
   };
   
   if (!user) {
@@ -292,7 +325,7 @@ export default function AccountPage() {
             </TabsList>
           </div>
           
-          {/* New Dashboard Tab */}
+          {/* Dashboard Tab */}
           <TabsContent value="dashboard">
             {loading ? (
               <div className="space-y-4">
@@ -302,8 +335,14 @@ export default function AccountPage() {
                   <Skeleton className="h-64 w-full" />
                 </div>
               </div>
-            ) : (
+            ) : profileData ? (
               <AccountDashboard userData={profileData} />
+            ) : (
+              <div className="text-center py-16">
+                <h2 className="text-2xl font-bold mb-4">Welcome to Your Dashboard</h2>
+                <p className="text-muted-foreground mb-6">Complete your profile to get personalized recommendations and track your orders.</p>
+                <Button onClick={() => setTab('profile')}>Complete Your Profile</Button>
+              </div>
             )}
           </TabsContent>
           
@@ -366,19 +405,39 @@ export default function AccountPage() {
                         />
                       </div>
                       
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input {...field} disabled type="email" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {/* Email field with update button */}
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="email"
+                            type="email"
+                            value={newEmail}
+                            onChange={(e) => setNewEmail(e.target.value)}
+                          />
+                          <Button 
+                            type="button" 
+                            onClick={handleEmailUpdate}
+                            disabled={updatingEmail || newEmail === user.email}
+                            className="whitespace-nowrap"
+                          >
+                            {updatingEmail ? (
+                              <>
+                                <span className="animate-spin h-4 w-4 border-2 border-b-transparent rounded-full mr-1"></span>
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                <Edit className="h-4 w-4 mr-1" />
+                                Update Email
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          You'll be asked to verify your email address after updating.
+                        </p>
+                      </div>
                       
                       <FormField
                         control={form.control}
@@ -503,7 +562,12 @@ export default function AccountPage() {
             <div className="space-y-6">
               <h2 className="text-2xl font-bold">Order History</h2>
               
-              {orders.length === 0 ? (
+              {loading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+              ) : orders.length === 0 ? (
                 <div className="bg-white rounded-lg border p-8 text-center">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                     <Package className="h-8 w-8 text-gray-400" />
@@ -525,7 +589,7 @@ export default function AccountPage() {
                           <div>
                             <CardTitle className="text-base">Order #{order.id}</CardTitle>
                             <CardDescription>
-                              Placed on {new Date(order.created_at).toLocaleDateString()}
+                              Placed on {formatDate(order.created_at)}
                             </CardDescription>
                           </div>
                           <div className="flex items-center gap-3">
@@ -544,7 +608,7 @@ export default function AccountPage() {
                       </CardHeader>
                       <CardContent className="p-0">
                         <div className="divide-y">
-                          {order.order_items.map((item: any) => (
+                          {(order.order_items || []).slice(0, 2).map((item: any) => (
                             <div key={item.id} className="p-4 flex items-center gap-4">
                               <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
                                 <Package className="h-8 w-8 text-muted-foreground/40" />
@@ -560,6 +624,11 @@ export default function AccountPage() {
                               </div>
                             </div>
                           ))}
+                          {(order.order_items || []).length > 2 && (
+                            <div className="p-4 text-sm text-muted-foreground text-center border-t">
+                              +{(order.order_items || []).length - 2} more items
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-between bg-muted/30">
@@ -581,18 +650,81 @@ export default function AccountPage() {
             <div className="space-y-6">
               <h2 className="text-2xl font-bold">Your Favorites</h2>
               
-              <div className="bg-white rounded-lg border p-8 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                  <Heart className="h-8 w-8 text-gray-400" />
+              {favLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="overflow-hidden">
+                      <div className="aspect-square relative">
+                        <Skeleton className="h-full w-full absolute inset-0" />
+                      </div>
+                      <CardContent className="p-4">
+                        <Skeleton className="h-5 w-2/3 mb-2" />
+                        <Skeleton className="h-4 w-1/3" />
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-                <h3 className="text-lg font-medium mb-2">No favorites yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Items you mark as favorite will appear here.
-                </p>
-                <Button asChild>
-                  <Link to="/shop">Browse Products</Link>
-                </Button>
-              </div>
+              ) : favorites.length === 0 ? (
+                <div className="bg-white rounded-lg border p-8 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                    <Heart className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">No favorites yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Items you mark as favorite will appear here.
+                  </p>
+                  <Button asChild>
+                    <Link to="/shop">Browse Products</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {favorites.map((item) => (
+                    <Card key={item.id} className="overflow-hidden">
+                      <div className="aspect-square relative bg-muted">
+                        {item.image ? (
+                          <img 
+                            src={item.image} 
+                            alt={item.product_name} 
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <Package className="h-12 w-12 text-muted-foreground/40" />
+                          </div>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-90"
+                          onClick={() => handleRemoveFavorite(item.product_id)}
+                        >
+                          <HeartOff className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-medium mb-1 line-clamp-1">{item.product_name}</h3>
+                        <Price amount={item.price} />
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0 flex gap-2">
+                        <Button asChild variant="outline" size="sm" className="flex-1">
+                          <Link to={`/product/${item.product_id}`}>
+                            <Eye className="h-4 w-4 mr-1" /> View
+                          </Link>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="flex-none"
+                          onClick={() => handleRemoveFavorite(item.product_id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

@@ -17,6 +17,7 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import AccountPage from "./pages/AccountPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ import AdminViewOrder from "./pages/admin/AdminViewOrder";
 import SupabaseSetupGuide from "./pages/admin/SupabaseSetupGuide";
 import { SupabaseProvider } from "./context/SupabaseContext";
 import { CartProvider } from "./context/CartContext";
+import { FavoritesProvider } from "./context/FavoritesContext";
 
 const queryClient = new QueryClient();
 
@@ -40,41 +42,44 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <SupabaseProvider>
       <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/auth/callback" element={<Callback />} />
-              <Route path="/shop/:slug" element={<CategoryDetail />} />
-              <Route path="/collections" element={<Collections />} />
-              <Route path="/collections/:slug" element={<CollectionDetail />} />
-              <Route path="/product/:slug" element={<ProductPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-              <Route path="/account" element={<AccountPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/faq" element={<FaqPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/admin" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/products" element={<AdminProducts />} />
-              <Route path="/admin/products/add" element={<AdminAddProduct />} />
-              <Route path="/admin/products/edit/:id" element={<AdminEditProduct />} />
-              <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/admin/orders/:id" element={<AdminViewOrder />} />
-              <Route path="/admin/setup-guide" element={<SupabaseSetupGuide />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <FavoritesProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/auth/callback" element={<Callback />} />
+                <Route path="/shop/:slug" element={<CategoryDetail />} />
+                <Route path="/collections" element={<Collections />} />
+                <Route path="/collections/:slug" element={<CollectionDetail />} />
+                <Route path="/product/:slug" element={<ProductPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+                <Route path="/account" element={<AccountPage />} />
+                <Route path="/account/orders/:id" element={<OrderDetailPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/faq" element={<FaqPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/admin" element={<AdminLogin />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/products" element={<AdminProducts />} />
+                <Route path="/admin/products/add" element={<AdminAddProduct />} />
+                <Route path="/admin/products/edit/:id" element={<AdminEditProduct />} />
+                <Route path="/admin/orders" element={<AdminOrders />} />
+                <Route path="/admin/orders/:id" element={<AdminViewOrder />} />
+                <Route path="/admin/setup-guide" element={<SupabaseSetupGuide />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </FavoritesProvider>
       </CartProvider>
     </SupabaseProvider>
   </QueryClientProvider>

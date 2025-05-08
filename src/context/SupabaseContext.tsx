@@ -14,6 +14,7 @@ type SupabaseContextType = {
   loading: boolean;
   signInWithGoogle: () => Promise<any>;
   isAdmin: boolean;
+  updateEmail: (email: string) => Promise<any>;
 };
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
@@ -175,6 +176,11 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   const signOut = async () => {
     try {
       setLoading(true);
+      
+      // Clear local storage cart items on logout
+      localStorage.removeItem('cartItems');
+      localStorage.removeItem('favoriteItems');
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -196,6 +202,51 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
       toast({
         title: "Sign out failed",
         description: error.message || "Unable to sign out",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateEmail = async (newEmail: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.updateUser({
+        email: newEmail,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update the local user state
+      setUser(data.user);
+      
+      // Also update the email in profiles table
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ email: newEmail })
+          .eq('id', user.id);
+          
+        if (profileError) {
+          console.error("Error updating profile email:", profileError);
+        }
+      }
+      
+      toast({
+        title: "Email updated",
+        description: "Please check your new email to confirm the change.",
+      });
+      
+      return data;
+    } catch (error: any) {
+      toast({
+        title: "Email update failed",
+        description: error.message || "Unable to update email",
         variant: "destructive",
       });
       throw error;
@@ -238,6 +289,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     loading,
     signInWithGoogle,
     isAdmin,
+    updateEmail,
   };
 
   return (

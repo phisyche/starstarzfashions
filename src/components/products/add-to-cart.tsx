@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { Minus, Plus, ShoppingCart, Check } from 'lucide-react';
+import { useFavorites } from '@/context/FavoritesContext';
+import { Minus, Plus, ShoppingCart, Check, Heart } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { getImagePath } from '@/utils/image-utils';
 
@@ -29,7 +30,9 @@ export const AddToCart: React.FC<AddToCartProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const { addItem } = useCart();
+  const { isFavorite, addToFavorites, removeFromFavorites, loading: favLoading } = useFavorites();
   const { toast } = useToast();
+  const isFav = isFavorite(productId);
 
   const decreaseQuantity = () => {
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
@@ -80,6 +83,29 @@ export const AddToCart: React.FC<AddToCartProps> = ({
     }
   };
 
+  const handleToggleFavorite = async () => {
+    try {
+      if (isFav) {
+        await removeFromFavorites(productId);
+      } else {
+        const productData = {
+          product_id: productId,
+          product_name: name,
+          price,
+          image: typeof image === 'string' ? getImagePath(image) : '',
+        };
+        await addToFavorites(productData);
+      }
+    } catch (error) {
+      console.error("Error managing favorites:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem updating your favorites.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className={className}>
       <div className="flex items-center mb-4">
@@ -108,6 +134,17 @@ export const AddToCart: React.FC<AddToCartProps> = ({
             <Plus className="h-3 w-3" />
           </Button>
         </div>
+        
+        <Button
+          onClick={handleToggleFavorite}
+          variant="outline"
+          size="icon"
+          className="ml-2 h-9 w-9"
+          disabled={favLoading}
+          aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart className={`h-4 w-4 ${isFav ? 'fill-current text-pink-500' : ''}`} />
+        </Button>
       </div>
 
       <Button 

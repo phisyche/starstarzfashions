@@ -1,30 +1,36 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useSupabase } from '@/context/SupabaseContext';
-import { ShoppingCart, User, Menu } from 'lucide-react';
+import { ShoppingCart, User, Menu, LogOut } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export function SiteHeader() {
   const { user, signOut, isAdmin } = useSupabase();
   const { itemCount } = useCart();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loggingOut, setLoggingOut] = useState(false);
   
-  const handleSignOut = async () => {
+  const handleSignOut = async (e: React.MouseEvent) => {
+    // Prevent default to avoid navigation issues
+    e.preventDefault();
+    
     try {
+      setLoggingOut(true);
       await signOut();
       toast({
         title: "Signed out successfully",
         description: "You have been logged out of your account",
       });
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -32,6 +38,8 @@ export function SiteHeader() {
         description: "There was a problem signing out. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoggingOut(false);
     }
   };
   
@@ -81,8 +89,24 @@ export function SiteHeader() {
                   <User className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                Logout
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleSignOut}
+                disabled={loggingOut}
+                className="flex items-center gap-1"
+              >
+                {loggingOut ? (
+                  <>
+                    <span className="animate-spin h-4 w-4 border-2 border-b-transparent rounded-full mr-1"></span>
+                    Logging out...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4 mr-1" />
+                    Logout
+                  </>
+                )}
               </Button>
             </>
           ) : (
@@ -136,8 +160,14 @@ export function SiteHeader() {
                       <Link to="/admin/dashboard" className="px-2 py-1 text-sm">Admin Dashboard</Link>
                     )}
                     <Link to="/account" className="px-2 py-1 text-sm">Account</Link>
-                    <Button variant="ghost" size="sm" onClick={handleSignOut} className="justify-start px-2">
-                      Logout
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleSignOut}
+                      disabled={loggingOut}
+                      className="justify-start px-2"
+                    >
+                      {loggingOut ? 'Logging out...' : 'Logout'}
                     </Button>
                   </>
                 )}
