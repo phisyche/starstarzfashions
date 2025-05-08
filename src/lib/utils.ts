@@ -1,118 +1,60 @@
 
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { format } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(
-  price: number,
-  options: {
-    currency?: "USD" | "EUR" | "GBP" | "BDT" | "KES";
-    notation?: Intl.NumberFormatOptions["notation"];
-  } = {}
-) {
-  const { currency = "KES", notation = "standard" } = options;
-
-  const formatCurrency = new Intl.NumberFormat("en-US", {
+export function formatPrice(price: number | string) {
+  return new Intl.NumberFormat("en-KE", {
     style: "currency",
-    currency,
-    notation,
-  });
-
-  return formatCurrency.format(price);
+    currency: "KES",
+  }).format(Number(price));
 }
 
-// Add the debounce utility function
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  
-  return function(...args: Parameters<T>) {
-    const later = () => {
-      timeout = null;
-      func(...args);
-    };
-    
-    if (timeout !== null) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(later, wait);
-  };
+export function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return format(date, "MMM d, yyyy");
 }
 
-// Add utility to generate keywords from text
-export function generateKeywords(text: string): string[] {
-  if (!text) return [];
-  
-  // Convert to lowercase and remove special characters
-  const normalizedText = text.toLowerCase().replace(/[^\w\s]/g, ' ');
-  
-  // Split into words and filter out short words (< 3 characters) and common stopwords
-  const stopwords = new Set(['the', 'and', 'for', 'with', 'this', 'that', 'are', 'was', 'not', 'you', 'can', 'has', 'will', 'its']);
-  
-  const words = normalizedText.split(/\s+/).filter(word => 
-    word.length > 2 && !stopwords.has(word)
-  );
-  
-  // Return unique words
-  return Array.from(new Set(words));
+export function generateOrderId() {
+  return 'ORD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-// Add a utility for optimized fuzzy search
-export function fuzzySearch(text: string, query: string): { matched: boolean; score: number } {
-  if (!text || !query) return { matched: false, score: 0 };
+export function formatPhoneNumber(phone: string): string {
+  // Remove any spaces or non-numeric characters
+  let cleaned = phone.replace(/\D/g, '');
   
-  const textLower = text.toLowerCase();
-  const queryLower = query.toLowerCase();
-  
-  // Direct match has highest score
-  if (textLower === queryLower) {
-    return { matched: true, score: 1.0 };
+  // Check if it starts with 0, replace with 254
+  if (cleaned.startsWith('0')) {
+    cleaned = '254' + cleaned.substring(1);
   }
   
-  // Substring match has high score
-  if (textLower.includes(queryLower)) {
-    const index = textLower.indexOf(queryLower);
-    // Higher score for matches at beginning of text
-    const positionScore = 1 - (index / textLower.length);
-    return { matched: true, score: 0.8 * positionScore };
+  // If it doesn't have country code (not starting with 254), add it
+  if (!cleaned.startsWith('254')) {
+    cleaned = '254' + cleaned;
   }
   
-  // Check for word-by-word matches
-  const words = textLower.split(/\s+/);
-  for (const word of words) {
-    if (word === queryLower) {
-      return { matched: true, score: 0.7 };
-    }
-    if (word.startsWith(queryLower)) {
-      return { matched: true, score: 0.6 };
-    }
-    if (word.includes(queryLower)) {
-      return { matched: true, score: 0.5 };
-    }
-  }
+  return cleaned;
+}
+
+export function generateMpesaPassword(shortcode: string, passkey: string, timestamp: string) {
+  // Concatenate the shortcode + passkey + timestamp
+  const str = shortcode + passkey + timestamp;
+  // Return as base64
+  return Buffer.from(str).toString('base64');
+}
+
+export function generateTimestamp() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
   
-  // Fuzzy matching as fallback
-  let lastFoundIndex = -1;
-  let matchedChars = 0;
-  
-  // Check if all characters in query appear in the same order in text
-  for (const char of queryLower) {
-    const index = textLower.indexOf(char, lastFoundIndex + 1);
-    if (index === -1) {
-      return { matched: false, score: 0 };
-    }
-    lastFoundIndex = index;
-    matchedChars++;
-  }
-  
-  // Calculate score based on proportion of matched characters and their proximity
-  const completeness = matchedChars / queryLower.length;
-  const proximityScore = 1 - (lastFoundIndex / textLower.length);
-  
-  return { matched: true, score: 0.3 * completeness * proximityScore };
+  return `${year}${month}${day}${hours}${minutes}${seconds}`;
 }

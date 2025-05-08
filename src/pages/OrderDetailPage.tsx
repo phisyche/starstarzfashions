@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -18,6 +18,7 @@ import { Package, ArrowLeft } from 'lucide-react';
 import { useSupabase } from '@/context/SupabaseContext';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { Spinner } from '@/components/ui/spinner';
 
 interface OrderItem {
   id: string;
@@ -45,10 +46,16 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useSupabase();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     const fetchOrderDetails = async () => {
-      if (!user || !id) return;
+      if (!id) return;
       
       try {
         setLoading(true);
@@ -61,72 +68,16 @@ export default function OrderDetailPage() {
             order_items(*)
           `)
           .eq('id', id)
-          .eq('user_id', user.id)
           .single();
           
         if (orderError) {
           console.error('Error fetching order:', orderError);
-          // Fallback to mock data if no real order data
-          if (id === 'ORD-001') {
-            setOrder({
-              id: 'ORD-001',
-              created_at: new Date().toISOString(),
-              status: 'delivered',
-              payment_status: 'paid',
-              total_amount: 2500,
-              shipping_address: {
-                line1: '123 Fashion Street',
-                city: 'Style City',
-                county: 'Design County',
-                postal_code: '12345'
-              },
-              payment_method: 'mpesa',
-              mpesa_reference: 'MP12345678',
-              order_items: [
-                {
-                  id: 'ITEM-001',
-                  product_name: 'Summer Dress',
-                  price: 1200,
-                  quantity: 1,
-                  size: 'M',
-                  color: 'Blue'
-                },
-                {
-                  id: 'ITEM-002',
-                  product_name: 'Casual Shoes',
-                  price: 1300,
-                  quantity: 1,
-                  size: '40',
-                  color: 'Black'
-                }
-              ]
-            });
-          } else if (id === 'ORD-002') {
-            setOrder({
-              id: 'ORD-002',
-              created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-              status: 'processing',
-              payment_status: 'paid',
-              total_amount: 4500,
-              shipping_address: {
-                line1: '456 Fashion Ave',
-                city: 'Style City',
-                county: 'Design County',
-                postal_code: '12345'
-              },
-              payment_method: 'card',
-              order_items: [
-                {
-                  id: 'ITEM-003',
-                  product_name: 'Leather Bag',
-                  price: 4500,
-                  quantity: 1,
-                  color: 'Brown'
-                }
-              ]
-            });
-          }
-        } else if (orderData) {
+          // If no order found, navigate back to account page
+          navigate('/account');
+          return;
+        }
+        
+        if (orderData) {
           setOrder(orderData);
         }
       } catch (error) {
@@ -137,7 +88,7 @@ export default function OrderDetailPage() {
     };
     
     fetchOrderDetails();
-  }, [id, user]);
+  }, [id, user, navigate]);
 
   if (!user) {
     return null;
@@ -245,7 +196,7 @@ export default function OrderDetailPage() {
                         <Price amount={item.price} />
                         {item.quantity > 1 && (
                           <div className="text-sm text-muted-foreground">
-                            ${(item.price / 100).toFixed(2)} each
+                            KES {item.price.toFixed(2)} each
                           </div>
                         )}
                       </div>
@@ -271,10 +222,11 @@ export default function OrderDetailPage() {
                 <CardContent>
                   {order.shipping_address && (
                     <address className="not-italic space-y-1">
-                      <div>{order.shipping_address.line1}</div>
+                      <div>{order.shipping_address.first_name} {order.shipping_address.last_name}</div>
+                      <div>{order.shipping_address.address}</div>
                       <div>{order.shipping_address.city}</div>
                       <div>{order.shipping_address.county}</div>
-                      <div>{order.shipping_address.postal_code}</div>
+                      <div>{order.shipping_address.phone}</div>
                     </address>
                   )}
                 </CardContent>
@@ -331,6 +283,11 @@ export default function OrderDetailPage() {
                     {order.status === 'shipped' && (
                       <div className="text-sm text-muted-foreground mt-2">
                         Your order has been shipped and is on its way to you!
+                      </div>
+                    )}
+                    {order.status === 'pending' && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Your order has been received and is pending processing.
                       </div>
                     )}
                   </div>
