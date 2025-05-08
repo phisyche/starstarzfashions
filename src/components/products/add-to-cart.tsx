@@ -44,7 +44,7 @@ export const AddToCart: React.FC<AddToCartProps> = ({
     
     try {
       // Process the image path to ensure it's correct
-      const processedImage = getImagePath(image);
+      const processedImage = typeof image === 'string' ? getImagePath(image) : '';
       
       // Create a product object with all necessary properties
       const product = {
@@ -62,11 +62,6 @@ export const AddToCart: React.FC<AddToCartProps> = ({
       setTimeout(() => {
         setIsAdding(false);
         setIsAdded(true);
-        
-        toast({
-          title: "Added to cart",
-          description: `${quantity} × ${name} added to your cart`,
-        });
         
         // Reset to normal state after showing success
         setTimeout(() => {
@@ -95,7 +90,8 @@ export const AddToCart: React.FC<AddToCartProps> = ({
             size="icon"
             className="h-9 w-9 rounded-none"
             onClick={decreaseQuantity}
-            disabled={quantity <= 1 || isAdding}
+            disabled={quantity <= 1 || isAdding || isAdded}
+            aria-label="Decrease quantity"
           >
             <Minus className="h-3 w-3" />
           </Button>
@@ -106,7 +102,8 @@ export const AddToCart: React.FC<AddToCartProps> = ({
             size="icon"
             className="h-9 w-9 rounded-none"
             onClick={increaseQuantity}
-            disabled={isAdding}
+            disabled={isAdding || isAdded}
+            aria-label="Increase quantity"
           >
             <Plus className="h-3 w-3" />
           </Button>
@@ -117,6 +114,7 @@ export const AddToCart: React.FC<AddToCartProps> = ({
         onClick={handleAddToCart}
         className={`w-full transition-all ${isAdded ? 'bg-green-600 hover:bg-green-700' : ''}`}
         disabled={isAdding || isAdded}
+        aria-label={isAdded ? "Added to Cart" : "Add to Cart"}
       >
         {isAdded ? (
           <>

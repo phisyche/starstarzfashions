@@ -30,18 +30,31 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     if (!userId) return false;
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', userId)
-        .maybeSingle();
-        
+      // Use the is_admin function we created in SQL
+      const { data, error } = await supabase.rpc('is_admin');
+      
       if (error) {
         console.error("Error checking admin status:", error);
         return false;
       }
       
-      return data?.is_admin || false;
+      // If we still need to check the profiles table as fallback
+      if (data === null) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', userId)
+          .maybeSingle();
+          
+        if (profileError) {
+          console.error("Error checking profile admin status:", profileError);
+          return false;
+        }
+        
+        return profileData?.is_admin || false;
+      }
+      
+      return data || false;
     } catch (error) {
       console.error("Error in admin check:", error);
       return false;
