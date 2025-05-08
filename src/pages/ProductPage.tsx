@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,14 +8,20 @@ import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { ShoppingCart, Heart, Share, ArrowLeft, Plus, Minus, Check, Truck } from "lucide-react";
 import { ProductCard } from "@/components/products/product-card";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/components/ui/use-toast";
+import { getImagePath } from "@/utils/image-utils";
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const product = products.find(p => p.slug === slug);
+  const { toast } = useToast();
+  const { addItem } = useCart();
   
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedColor, setSelectedColor] = useState("Black");
+  const [isAdding, setIsAdding] = useState(false);
   
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
   const colors = ["Black", "Red", "Blue", "Green"];
@@ -31,6 +38,47 @@ export default function ProductPage() {
   const salePrice = product?.isSale && product?.discountPercent > 0 
     ? product.price * (1 - product.discountPercent / 100) 
     : null;
+  
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    setIsAdding(true);
+    
+    try {
+      // Process the image path
+      const processedImage = getImagePath(product.image);
+      
+      // Create product object
+      const productToAdd = {
+        name: product.name,
+        price: product.price,
+        image: processedImage,
+        size: selectedSize,
+        color: selectedColor,
+      };
+      
+      // Add to cart
+      addItem(product.id, quantity, productToAdd);
+      
+      toast({
+        title: "Added to cart",
+        description: `${quantity} × ${product.name} added to your cart`,
+      });
+      
+      setTimeout(() => {
+        setIsAdding(false);
+      }, 500);
+      
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "Could not add item to cart",
+        variant: "destructive"
+      });
+      setIsAdding(false);
+    }
+  };
   
   if (!product) {
     return (
@@ -188,9 +236,18 @@ export default function ProductPage() {
               
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <Button size="lg" className="flex-1 gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  Add to Cart
+                <Button 
+                  size="lg" 
+                  className="flex-1 gap-2"
+                  onClick={handleAddToCart}
+                  disabled={isAdding}
+                >
+                  {isAdding ? (
+                    <div className="animate-spin h-5 w-5 border-2 border-b-transparent rounded-full"></div>
+                  ) : (
+                    <ShoppingCart className="h-5 w-5" />
+                  )}
+                  {isAdding ? "Adding..." : "Add to Cart"}
                 </Button>
                 <Button size="lg" variant="outline" className="flex-1 gap-2">
                   <Heart className="h-5 w-5" />

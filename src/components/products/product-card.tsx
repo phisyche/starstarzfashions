@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Price } from "@/components/ui/price";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Eye } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/components/ui/use-toast";
+import { getImagePath } from "@/utils/image-utils";
 
 export interface ProductType {
   id: string;
@@ -27,10 +30,55 @@ export interface ProductCardProps {
 
 export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { addItem } = useCart();
+  const { toast } = useToast();
   
   const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
     : 0;
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsAdding(true);
+    
+    try {
+      // Process the image path
+      const processedImage = getImagePath(product.image);
+      
+      // Create product object
+      const productToAdd = {
+        name: product.name,
+        price: product.price,
+        image: processedImage,
+        size: 'M', // Default size
+        color: 'Default', // Default color
+      };
+      
+      // Add to cart
+      addItem(product.id, 1, productToAdd);
+      
+      toast({
+        title: "Added to cart",
+        description: `${product.name} added to your cart`,
+      });
+      
+      setTimeout(() => {
+        setIsAdding(false);
+      }, 500);
+      
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "Could not add item to cart",
+        variant: "destructive"
+      });
+      setIsAdding(false);
+    }
+  };
 
   if (layout === 'list') {
     return (
@@ -85,9 +133,15 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
             <Button 
               className="flex-1 bg-theme-blue hover:bg-theme-pink transition-colors"
               size="sm"
+              onClick={handleAddToCart}
+              disabled={isAdding}
             >
-              <ShoppingCart className="h-4 w-4 mr-1" />
-              Add to Cart
+              {isAdding ? (
+                <div className="animate-spin h-4 w-4 border-2 border-b-transparent rounded-full mr-1"></div>
+              ) : (
+                <ShoppingCart className="h-4 w-4 mr-1" />
+              )}
+              {isAdding ? "Adding..." : "Add to Cart"}
             </Button>
             
             <Button
@@ -156,9 +210,15 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
         <Button 
           className="w-full bg-theme-blue hover:bg-theme-pink transition-colors text-xs"
           size="sm"
+          onClick={handleAddToCart}
+          disabled={isAdding}
         >
-          <ShoppingCart className="h-3.5 w-3.5 mr-1" />
-          Add to Cart
+          {isAdding ? (
+            <div className="animate-spin h-3.5 w-3.5 border-2 border-b-transparent rounded-full mr-1"></div>
+          ) : (
+            <ShoppingCart className="h-3.5 w-3.5 mr-1" />
+          )}
+          {isAdding ? "Adding..." : "Add to Cart"}
         </Button>
         
         <Button

@@ -58,6 +58,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Add item to cart
   const addItem = (productId: string, quantity: number, product: any) => {
+    console.log("Adding to cart:", productId, quantity, product);
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.productId === productId);
       if (existingItem) {
@@ -83,7 +84,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateQuantity = (productId: string, quantity: number) => {
     setItems(prevItems => {
       return prevItems.map(item =>
-        item.productId === productId ? { ...item, quantity } : item
+        item.id === productId ? { ...item, quantity } : item
       );
     });
   };
@@ -91,7 +92,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Remove item from cart
   const removeItem = (productId: string) => {
     setItems(prevItems => {
-      return prevItems.filter(item => item.productId !== productId);
+      return prevItems.filter(item => item.id !== productId);
     });
   };
 

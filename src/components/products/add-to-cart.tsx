@@ -46,20 +46,27 @@ export const AddToCart: React.FC<AddToCartProps> = ({
       // Process the image path to ensure it's correct
       const processedImage = getImagePath(image);
       
-      addItem({
-        productId,
+      // Create a product object with all necessary properties
+      const product = {
         name,
         price,
         image: processedImage,
-        quantity,
         size: size || 'M',
         color: color || 'Default',
-      });
+      };
+      
+      // Now call addItem with the correct parameters
+      addItem(productId, quantity, product);
       
       // Show success state
       setTimeout(() => {
         setIsAdding(false);
         setIsAdded(true);
+        
+        toast({
+          title: "Added to cart",
+          description: `${quantity} × ${name} added to your cart`,
+        });
         
         // Reset to normal state after showing success
         setTimeout(() => {
