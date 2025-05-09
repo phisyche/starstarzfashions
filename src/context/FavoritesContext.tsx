@@ -1,20 +1,21 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { useSupabase } from './SupabaseContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
-interface FavoriteItem {
+export interface FavoriteItem {
   id: string;
-  product_id: string;
-  product_name: string;
+  productId: string;
+  name: string;
   price: number;
   image: string;
 }
 
 interface FavoritesContextType {
   favorites: FavoriteItem[];
-  addToFavorites: (product: Omit<FavoriteItem, 'id'>) => Promise<void>;
+  addToFavorites: (product: any) => Promise<void>;
   removeFromFavorites: (productId: string) => Promise<void>;
   isFavorite: (productId: string) => boolean;
   loading: boolean;
@@ -22,158 +23,183 @@ interface FavoritesContextType {
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
-export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const { user } = useSupabase();
+export const useFavorites = () => {
+  const context = useContext(FavoritesContext);
+  if (!context) {
+    throw new Error('useFavorites must be used within a FavoritesProvider');
+  }
+  return context;
+};
 
-  // Load favorites from localStorage or database when the component mounts
+export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const { user } = useSupabase();
+  const { toast } = useToast();
+
   useEffect(() => {
     const loadFavorites = async () => {
-      setLoading(true);
       try {
+        setLoading(true);
+        
         if (user) {
-          // Fetch favorites from database for logged-in users
-          const { data, error } = await supabase
-            .from('favorite_items')
-            .select('*')
-            .eq('user_id', user.id);
+          // Load from database if user is logged in
+          try {
+            const { data, error } = await supabase
+              .from('favorite_items')
+              .select('*')
+              .eq('user_id', user.id);
+
+            if (error) {
+              console.error('Error loading favorites:', error);
+              // Fall back to localStorage
+              const storedFavorites = localStorage.getItem('favoriteItems');
+              const parsedFavorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+              setFavorites(parsedFavorites);
+              return;
+            }
             
-          if (error) {
-            throw error;
+            if (data) {
+              const formattedFavorites: FavoriteItem[] = data.map(item => ({
+                id: item.id,
+                productId: item.product_id,
+                name: item.product_name,
+                price: Number(item.price),
+                image: item.image_url || '',
+              }));
+              setFavorites(formattedFavorites);
+            }
+          } catch (error) {
+            console.error('Error loading favorites from database:', error);
+            // Fall back to localStorage
+            const storedFavorites = localStorage.getItem('favoriteItems');
+            const parsedFavorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+            setFavorites(parsedFavorites);
           }
-          
-          setFavorites(data || []);
         } else {
-          // Load from localStorage for guests
+          // Load from localStorage if no user is logged in
           const storedFavorites = localStorage.getItem('favoriteItems');
-          if (storedFavorites) {
-            setFavorites(JSON.parse(storedFavorites));
-          }
+          const parsedFavorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+          setFavorites(parsedFavorites);
         }
       } catch (error) {
         console.error('Error loading favorites:', error);
+        setFavorites([]);
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadFavorites();
   }, [user]);
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
-    if (!user) {
+    if (!loading) {
       localStorage.setItem('favoriteItems', JSON.stringify(favorites));
     }
-  }, [favorites, user]);
+  }, [favorites, loading]);
 
-  const addToFavorites = async (product: Omit<FavoriteItem, 'id'>) => {
-    setLoading(true);
+  const addToFavorites = async (product: any) => {
     try {
+      const newItem: FavoriteItem = {
+        id: uuidv4(),
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+      };
+
+      // If user is logged in, save to database
       if (user) {
-        // Add to database for logged-in users
-        const { data, error } = await supabase
-          .from('favorite_items')
-          .insert({
-            user_id: user.id,
-            product_id: product.product_id,
-            product_name: product.product_name,
-            price: product.price,
-            image_url: product.image
-          })
-          .select()
-          .single();
-          
+        const { error } = await supabase.from('favorite_items').insert({
+          id: newItem.id,
+          user_id: user.id,
+          product_id: newItem.productId,
+          product_name: newItem.name,
+          price: newItem.price,
+          image_url: newItem.image,
+        });
+
         if (error) {
-          throw error;
+          console.error('Error adding favorite to database:', error);
+          toast({
+            title: 'Error',
+            description: 'Could not add item to favorites',
+            variant: 'destructive',
+          });
+          return;
         }
-        
-        setFavorites(prev => [...prev, data as FavoriteItem]);
-      } else {
-        // Add to local state for guests
-        const newFavorite = {
-          id: crypto.randomUUID(),
-          ...product
-        };
-        setFavorites(prev => [...prev, newFavorite]);
       }
+
+      setFavorites(prev => [...prev, newItem]);
       
       toast({
-        title: 'Added to favorites',
-        description: `${product.product_name} has been added to your favorites.`
+        title: 'Added to Favorites',
+        description: `${product.name} has been added to your favorites`,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding to favorites:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add item to favorites.',
-        variant: 'destructive'
+        description: 'Could not add item to favorites',
+        variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const removeFromFavorites = async (productId: string) => {
-    setLoading(true);
     try {
+      const itemToRemove = favorites.find(item => item.productId === productId);
+      
+      if (!itemToRemove) {
+        return;
+      }
+
+      // If user is logged in, remove from database
       if (user) {
-        // Remove from database for logged-in users
         const { error } = await supabase
           .from('favorite_items')
           .delete()
           .eq('user_id', user.id)
           .eq('product_id', productId);
-          
+
         if (error) {
-          throw error;
+          console.error('Error removing favorite from database:', error);
         }
       }
-      
-      // Remove from local state for all users
-      setFavorites(prev => prev.filter(item => item.product_id !== productId));
+
+      setFavorites(prev => prev.filter(item => item.productId !== productId));
       
       toast({
-        title: 'Removed from favorites',
-        description: 'The item has been removed from your favorites.'
+        title: 'Removed from Favorites',
+        description: `Item has been removed from your favorites`,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error removing from favorites:', error);
       toast({
         title: 'Error',
-        description: 'Failed to remove item from favorites.',
-        variant: 'destructive'
+        description: 'Could not remove item from favorites',
+        variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const isFavorite = (productId: string) => {
-    return favorites.some(item => item.product_id === productId);
-  };
-
-  const value = {
-    favorites,
-    addToFavorites,
-    removeFromFavorites,
-    isFavorite,
-    loading
+    return favorites.some(item => item.productId === productId);
   };
 
   return (
-    <FavoritesContext.Provider value={value}>
+    <FavoritesContext.Provider
+      value={{
+        favorites,
+        addToFavorites,
+        removeFromFavorites,
+        isFavorite,
+        loading,
+      }}
+    >
       {children}
     </FavoritesContext.Provider>
   );
-};
-
-export const useFavorites = () => {
-  const context = useContext(FavoritesContext);
-  if (context === undefined) {
-    throw new Error('useFavorites must be used within a FavoritesProvider');
-  }
-  return context;
 };

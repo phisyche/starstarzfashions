@@ -167,6 +167,178 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string | null
+          price: number
+          product_id: string
+          product_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          price: number
+          product_id: string
+          product_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          price?: number
+          product_id?: string
+          product_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mpesa_transactions: {
+        Row: {
+          amount: number
+          callback_data: Json | null
+          checkout_request_id: string | null
+          created_at: string | null
+          id: string
+          merchant_request_id: string | null
+          mpesa_receipt_number: string | null
+          order_id: string | null
+          phone_number: string
+          result_code: string | null
+          result_description: string | null
+          status: string | null
+          transaction_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          callback_data?: Json | null
+          checkout_request_id?: string | null
+          created_at?: string | null
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          order_id?: string | null
+          phone_number: string
+          result_code?: string | null
+          result_description?: string | null
+          status?: string | null
+          transaction_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          callback_data?: Json | null
+          checkout_request_id?: string | null
+          created_at?: string | null
+          id?: string
+          merchant_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          order_id?: string | null
+          phone_number?: string
+          result_code?: string | null
+          result_description?: string | null
+          status?: string | null
+          transaction_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mpesa_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          order_id: string | null
+          price: number
+          product_id: string
+          product_name: string
+          quantity: number
+          size: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          price: number
+          product_id: string
+          product_name: string
+          quantity?: number
+          size?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          price?: number
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          size?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          mpesa_reference: string | null
+          payment_method: string
+          payment_status: string
+          shipping_address: Json
+          status: string
+          total_amount: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          mpesa_reference?: string | null
+          payment_method: string
+          payment_status?: string
+          shipping_address: Json
+          status?: string
+          total_amount: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mpesa_reference?: string | null
+          payment_method?: string
+          payment_status?: string
+          shipping_address?: Json
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string
@@ -294,6 +466,10 @@ export type Database = {
     Functions: {
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_profile_owner: {
+        Args: { profile_id: string }
         Returns: boolean
       }
     }

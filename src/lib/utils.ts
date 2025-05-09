@@ -24,6 +24,8 @@ export function generateOrderId() {
 }
 
 export function formatPhoneNumber(phone: string): string {
+  if (!phone) return '';
+  
   // Remove any spaces or non-numeric characters
   let cleaned = phone.replace(/\D/g, '');
   
@@ -41,10 +43,14 @@ export function formatPhoneNumber(phone: string): string {
 }
 
 export function generateMpesaPassword(shortcode: string, passkey: string, timestamp: string) {
-  // Concatenate the shortcode + passkey + timestamp
-  const str = shortcode + passkey + timestamp;
-  // Return as base64
-  return Buffer.from(str).toString('base64');
+  // For browser environments, we need to use TextEncoder and btoa
+  if (typeof window !== 'undefined') {
+    const str = shortcode + passkey + timestamp;
+    return btoa(str);
+  }
+  
+  // For Deno/Node environments (will be used in Edge Functions)
+  return Buffer.from(shortcode + passkey + timestamp).toString('base64');
 }
 
 export function generateTimestamp() {

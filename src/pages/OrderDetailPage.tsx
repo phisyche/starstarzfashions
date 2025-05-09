@@ -19,6 +19,7 @@ import { useSupabase } from '@/context/SupabaseContext';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface OrderItem {
   id: string;
@@ -72,12 +73,17 @@ export default function OrderDetailPage() {
           
         if (orderError) {
           console.error('Error fetching order:', orderError);
-          // If no order found, navigate back to account page
-          navigate('/account');
           return;
         }
         
         if (orderData) {
+          // Validate that this order belongs to the current user
+          if (orderData.user_id !== user.id) {
+            console.error('Unauthorized access to order');
+            navigate('/account');
+            return;
+          }
+          
           setOrder(orderData);
         }
       } catch (error) {
@@ -91,7 +97,21 @@ export default function OrderDetailPage() {
   }, [id, user, navigate]);
 
   if (!user) {
-    return null;
+    return (
+      <MainLayout>
+        <div className="container py-8 max-w-4xl">
+          <Alert>
+            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertDescription>
+              Please log in to view your order details.
+            </AlertDescription>
+          </Alert>
+          <Button asChild className="mt-4">
+            <Link to="/login">Log In</Link>
+          </Button>
+        </div>
+      </MainLayout>
+    );
   }
 
   if (loading) {
@@ -179,7 +199,7 @@ export default function OrderDetailPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y">
-                  {order.order_items.map((item) => (
+                  {order.order_items && order.order_items.map((item) => (
                     <div key={item.id} className="p-4 flex items-center gap-4">
                       <div className="w-20 h-20 bg-muted rounded-md flex items-center justify-center">
                         <Package className="h-8 w-8 text-muted-foreground/40" />

@@ -58,6 +58,17 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to proceed with checkout",
+        variant: "destructive",
+      });
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+    
     if (cartItems.length === 0) {
       navigate('/cart');
     }
@@ -65,30 +76,39 @@ export default function CheckoutPage() {
     // Pre-fill user data if available
     if (user) {
       const fetchUserProfile = async () => {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-          
-        if (profile) {
-          setFormData(prev => ({
-            ...prev,
-            firstName: profile.first_name || '',
-            lastName: profile.last_name || '',
-            email: profile.email || user.email || '',
-            phone: profile.phone || '',
-            address: profile.address?.line1 || '',
-            city: profile.address?.city || '',
-            postalCode: profile.address?.postal_code || '',
-            country: profile.address?.country || 'Kenya',
-          }));
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching profile:', error);
+            return;
+          }
+            
+          if (profile) {
+            setFormData(prev => ({
+              ...prev,
+              firstName: profile.first_name || '',
+              lastName: profile.last_name || '',
+              email: profile.email || user.email || '',
+              phone: profile.phone || '',
+              address: profile.address?.line1 || '',
+              city: profile.address?.city || '',
+              postalCode: profile.address?.postal_code || '',
+              country: profile.address?.country || 'Kenya',
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching profile data:', error);
         }
       };
       
       fetchUserProfile();
     }
-  }, [cartItems, navigate, user]);
+  }, [cartItems, navigate, user, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -114,6 +134,16 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to proceed with checkout",
+        variant: "destructive",
+      });
+      navigate('/login?redirect=/checkout');
+      return;
+    }
 
     if (!formData.terms) {
       toast({
@@ -148,7 +178,7 @@ export default function CheckoutPage() {
       // Create the order in the database
       const orderData = {
         id: newOrderId,
-        user_id: user?.id || null,
+        user_id: user.id,
         status: 'pending',
         total_amount: calculateTotal(),
         shipping_address: {
@@ -249,7 +279,7 @@ export default function CheckoutPage() {
       setPaymentError(error instanceof Error ? error.message : 'Unknown error occurred');
       toast({
         title: "Checkout failed",
-        description: "There was an error processing your order. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error processing your order. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -257,8 +287,42 @@ export default function CheckoutPage() {
     }
   };
 
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="container py-12">
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertDescription>
+              Please log in to continue with checkout.
+            </AlertDescription>
+          </Alert>
+          <Button asChild>
+            <a href="/login?redirect=/checkout">Log In</a>
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
   if (cartItems.length === 0) {
-    return null; // or a message indicating the cart is empty
+    return (
+      <MainLayout>
+        <div className="container py-12">
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Empty Cart</AlertTitle>
+            <AlertDescription>
+              Your cart is empty. Add items to your cart before checking out.
+            </AlertDescription>
+          </Alert>
+          <Button asChild>
+            <a href="/shop">Continue Shopping</a>
+          </Button>
+        </div>
+      </MainLayout>
+    );
   }
 
   return (

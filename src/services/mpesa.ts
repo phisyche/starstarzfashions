@@ -1,7 +1,7 @@
 
 import { MPesaPaymentPayload, MPesaPaymentResponse } from '@/types/models';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { formatPhoneNumber } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Initiates an M-Pesa payment via Supabase Edge Function
@@ -13,28 +13,29 @@ export async function initiateMpesaPayment(
     // Format the phone number to add country code if needed
     const formattedPhone = formatPhoneNumber(payload.phone);
     
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/process-mpesa-payment`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...payload,
-          phone: formattedPhone,
-        }),
-      }
-    );
+    console.log('Initiating M-Pesa payment with payload:', {
+      ...payload,
+      phone: formattedPhone,
+    });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('M-Pesa API error:', errorData);
-      throw new Error(errorData.error || 'Failed to process M-Pesa payment');
+    // Use the Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('process-mpesa-payment', {
+      body: JSON.stringify({
+        ...payload,
+        phone: formattedPhone,
+      }),
+    });
+
+    if (error) {
+      console.error('M-Pesa API error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to process M-Pesa payment'
+      };
     }
 
-    const data: MPesaPaymentResponse = await response.json();
-    return data;
+    console.log('M-Pesa payment response:', data);
+    return data as MPesaPaymentResponse;
   } catch (error) {
     console.error('Error initiating M-Pesa payment:', error);
     return {
@@ -45,22 +46,29 @@ export async function initiateMpesaPayment(
 }
 
 /**
- * Formats a phone number to ensure it's in the format expected by M-Pesa
- * Converts formats like 07XXXXXXXX or 7XXXXXXXX to 2547XXXXXXXX
+ * Checks the status of an M-Pesa transaction
  */
-function formatPhoneNumber(phone: string): string {
-  // Remove any spaces or non-numeric characters
-  let cleaned = phone.replace(/\D/g, '');
-  
-  // Check if it starts with 0, replace with 254
-  if (cleaned.startsWith('0')) {
-    cleaned = '254' + cleaned.substring(1);
+export async function checkMpesaTransactionStatus(
+  checkoutRequestId: string
+): Promise<{ status: string; paid: boolean }> {
+  try {
+    const { data, error } = await supabase
+      .from('mpesa_transactions')
+      .select('status')
+      .eq('checkout_request_id', checkoutRequestId)
+      .single();
+
+    if (error) {
+      console.error('Error checking M-Pesa status:', error);
+      return { status: 'unknown', paid: false };
+    }
+
+    return { 
+      status: data?.status || 'pending',
+      paid: data?.status === 'completed'
+    };
+  } catch (error) {
+    console.error('Error checking transaction status:', error);
+    return { status: 'error', paid: false };
   }
-  
-  // If it doesn't have country code (not starting with 254), add it
-  if (!cleaned.startsWith('254')) {
-    cleaned = '254' + cleaned;
-  }
-  
-  return cleaned;
 }

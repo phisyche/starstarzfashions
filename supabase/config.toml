@@ -132,8 +132,3 @@ enabled = true
 [storage]
 [storage.uploads]
 enabled = true
-
-# Configure one or more tables to store uploaded files.
-# [storage.upload_tables]
-# [storage.upload_tables.profiles]
-# enabled = true

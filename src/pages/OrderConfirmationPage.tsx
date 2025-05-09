@@ -8,6 +8,7 @@ import { useSupabase } from '@/context/SupabaseContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { checkMpesaTransactionStatus } from "@/services/mpesa";
 
 export default function OrderConfirmationPage() {
   const [searchParams] = useSearchParams();
@@ -18,8 +19,14 @@ export default function OrderConfirmationPage() {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login?redirect=/order-confirmation' + (orderId ? `?orderId=${orderId}` : ''));
+      return;
+    }
+    
     if (!orderId) {
       navigate('/');
       return;
@@ -31,36 +38,67 @@ export default function OrderConfirmationPage() {
         
         const { data, error } = await supabase
           .from('orders')
-          .select(`
-            *,
-            order_items(*)
-          `)
+          .select('*, order_items(*)')
           .eq('id', orderId)
           .single();
           
         if (error) {
+          console.error('Error fetching order:', error);
           throw error;
         }
         
-        if (data) {
-          setOrder(data);
+        if (!data) {
+          throw new Error('Order not found');
+        }
+        
+        setOrder(data);
+        
+        // Check payment status for M-Pesa payments
+        if (data.payment_method === 'mpesa' && data.payment_status === 'pending') {
+          setCheckingPayment(true);
           
-          // Check payment status for M-Pesa payments
-          if (data.payment_method === 'mpesa' && data.payment_status === 'pending') {
-            const checkPaymentStatus = setInterval(async () => {
-              const { data: updatedOrder } = await supabase
-                .from('orders')
-                .select('payment_status')
-                .eq('id', orderId)
-                .single();
+          // Get the M-Pesa transaction for this order
+          const { data: txnData, error: txnError } = await supabase
+            .from('mpesa_transactions')
+            .select('checkout_request_id')
+            .eq('order_id', orderId)
+            .single();
+            
+          if (!txnError && txnData?.checkout_request_id) {
+            // Start polling for payment status
+            const checkoutRequestId = txnData.checkout_request_id;
+            const checkPaymentInterval = setInterval(async () => {
+              try {
+                // First check direct from DB
+                const { data: updatedOrder } = await supabase
+                  .from('orders')
+                  .select('payment_status')
+                  .eq('id', orderId)
+                  .single();
+                  
+                if (updatedOrder && updatedOrder.payment_status === 'paid') {
+                  clearInterval(checkPaymentInterval);
+                  setCheckingPayment(false);
+                  setOrder(prev => ({ ...prev, payment_status: 'paid' }));
+                  return;
+                }
                 
-              if (updatedOrder && updatedOrder.payment_status === 'paid') {
-                clearInterval(checkPaymentStatus);
-                setOrder(prev => ({ ...prev, payment_status: 'paid' }));
+                // Then check transaction status service
+                const statusResult = await checkMpesaTransactionStatus(checkoutRequestId);
+                if (statusResult.paid) {
+                  clearInterval(checkPaymentInterval);
+                  setCheckingPayment(false);
+                  setOrder(prev => ({ ...prev, payment_status: 'paid' }));
+                }
+              } catch (checkError) {
+                console.error('Error checking payment status:', checkError);
               }
             }, 5000); // Check every 5 seconds
             
-            return () => clearInterval(checkPaymentStatus);
+            return () => {
+              clearInterval(checkPaymentInterval);
+              setCheckingPayment(false);
+            };
           }
         }
       } catch (error) {
@@ -72,7 +110,28 @@ export default function OrderConfirmationPage() {
     };
     
     fetchOrderDetails();
-  }, [orderId, navigate]);
+  }, [orderId, navigate, user]);
+
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="container py-12">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertDescription>
+              Please log in to view your order details.
+            </AlertDescription>
+          </Alert>
+          <Button asChild className="mt-4">
+            <Link to={`/login?redirect=/order-confirmation${orderId ? `?orderId=${orderId}` : ''}`}>
+              Log In
+            </Link>
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (loading) {
     return (
@@ -158,7 +217,7 @@ export default function OrderConfirmationPage() {
                       <h3 className="font-medium">Order Processing</h3>
                     </div>
                     <p className="text-sm text-gray-600">
-                      We're preparing your items for shipping. You'll receive an email once your order is ready.
+                      We're preparing your items for shipping. You'll receive an email with the details.
                     </p>
                   </div>
                   
@@ -203,7 +262,7 @@ export default function OrderConfirmationPage() {
             </Button>
             <Button asChild variant="outline">
               <Link to={`/account/orders/${order.id}`}>
-                View Order
+                View Order Details
               </Link>
             </Button>
           </div>

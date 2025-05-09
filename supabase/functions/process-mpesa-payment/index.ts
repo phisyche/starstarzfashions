@@ -38,12 +38,15 @@ serve(async (req) => {
     // Get OAuth Token
     const tokenResponse = await getMpesaToken();
     if (!tokenResponse.success) {
+      console.error('Failed to obtain M-Pesa token:', tokenResponse.error);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to obtain M-Pesa token' }),
+        JSON.stringify({ success: false, error: 'Failed to obtain M-Pesa token: ' + tokenResponse.error }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Successfully obtained M-Pesa token');
+    
     // Generate M-Pesa request
     const timestamp = generateTimestamp();
     const password = generateMpesaPassword(MPESA_SHORTCODE, MPESA_PASSKEY, timestamp);
@@ -62,23 +65,45 @@ serve(async (req) => {
       transactionDesc: "Payment for order"
     });
 
+    if (!mpesaResponse.success) {
+      console.error('Failed to initiate STK push:', mpesaResponse.error);
+      return new Response(
+        JSON.stringify({ success: false, error: mpesaResponse.error }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Store the request in the database
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    if (mpesaResponse.success) {
-      await supabase.from('mpesa_transactions').insert({
+    try {
+      const { data, error } = await supabase.from('mpesa_transactions').insert({
         checkout_request_id: mpesaResponse.checkoutRequestID,
         merchant_request_id: mpesaResponse.merchantRequestID,
         order_id: orderId,
         phone_number: phone,
         amount: amount,
         status: 'pending',
-      });
+      }).select();
+      
+      if (error) {
+        console.error('Error storing M-Pesa transaction:', error);
+      } else {
+        console.log('M-Pesa transaction stored successfully:', data);
+      }
+    } catch (dbError) {
+      console.error('Database error when storing transaction:', dbError);
     }
 
     return new Response(
-      JSON.stringify(mpesaResponse),
-      { status: mpesaResponse.success ? 200 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        success: true,
+        checkoutRequestID: mpesaResponse.checkoutRequestID,
+        merchantRequestID: mpesaResponse.merchantRequestID,
+        responseDescription: mpesaResponse.responseDescription,
+        customerMessage: mpesaResponse.customerMessage
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error processing M-Pesa payment:', error);
@@ -120,6 +145,10 @@ async function initiateSTKPush({
   token, phone, amount, shortcode, password, timestamp, callbackURL, accountReference, transactionDesc
 }) {
   try {
+    console.log('Initiating STK Push with params:', {
+      phone, amount, shortcode, callbackURL, accountReference
+    });
+    
     const response = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
       method: 'POST',
       headers: {
@@ -155,7 +184,7 @@ async function initiateSTKPush({
     } else {
       return {
         success: false,
-        error: data.errorMessage || 'STK push failed'
+        error: data.errorMessage || data.ResponseDescription || 'STK push failed'
       };
     }
   } catch (error) {
