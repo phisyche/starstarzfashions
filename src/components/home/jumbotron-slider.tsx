@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,21 +13,21 @@ import type { EmblaCarouselType } from "embla-carousel";
 const slides = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80",
-    title: "Summer Collection 2024",
-    description: "Discover our latest fashion pieces for the season",
+    image: "/new/starstarz/IMG-20250426-WA0006.jpg",
+    title: "African Print Collection",
+    description: "Embrace culture with our vibrant African-inspired designs",
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1576185850227-1f72b7f8d483?auto=format&fit=crop&q=80",
-    title: "Elegant Essentials",
-    description: "Timeless pieces for your wardrobe",
+    image: "/new/starstarz/IMG-20250426-WA0002.jpg",
+    title: "Modern Elegance",
+    description: "Contemporary fashion that blends tradition with modern aesthetics",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&q=80",
-    title: "Luxury Fashion",
-    description: "Premium clothing and accessories",
+    image: "/new/starstarz/IMG-20250426-WA0007.jpg",
+    title: "Casual & Stylish",
+    description: "Everyday comfort with our uniquely crafted casual wear",
   },
 ];
 
@@ -50,10 +51,10 @@ export function JumbotronSlider() {
       if (api) {
         setIsTransitioning(true);
         api.scrollNext();
-        setTimeout(() => setIsTransitioning(false), 800);
+        setTimeout(() => setIsTransitioning(false), 500); // Reduced from 800ms to 500ms for faster transition
       }
       resetAutoplay();
-    }, 5000);
+    }, 4000); // Reduced from 5000ms to 4000ms for faster slides
   }, [api]);
 
   const stopAutoplay = useCallback(() => {
@@ -93,20 +94,20 @@ export function JumbotronSlider() {
               <img
                 src={slide.image}
                 alt={slide.title}
-                className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${
-                  isTransitioning ? "scale-110" : "scale-100"
+                className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${
+                  isTransitioning ? "scale-105" : "scale-100"
                 }`}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-theme-blue/30 to-theme-pink/20" />
               <div className="absolute inset-0 flex items-center">
                 <div className="container mx-auto px-4">
-                  <div className={`max-w-2xl transition-all duration-700 ${
+                  <div className={`max-w-2xl transition-all duration-500 ${
                     isTransitioning ? "opacity-0 translate-y-10" : "opacity-100 translate-y-0"
                   }`}>
-                    <h2 className="text-5xl md:text-6xl font-bold mb-6 text-white">
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white">
                       {slide.title}
                     </h2>
-                    <p className="text-xl md:text-2xl mb-8 text-white/90">
+                    <p className="text-lg md:text-xl mb-8 text-white/90">
                       {slide.description}
                     </p>
                     <Button 

@@ -4,14 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useSupabase } from './SupabaseContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-
-export interface FavoriteItem {
-  id: string;
-  productId: string;
-  name: string;
-  price: number;
-  image: string;
-}
+import { FavoriteItem } from '@/types/models';
 
 interface FavoritesContextType {
   favorites: FavoriteItem[];
@@ -63,9 +56,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               const formattedFavorites: FavoriteItem[] = data.map(item => ({
                 id: item.id,
                 productId: item.product_id,
+                product_id: item.product_id,
                 name: item.product_name,
+                product_name: item.product_name,
                 price: Number(item.price),
                 image: item.image_url || '',
+                image_url: item.image_url || '',
               }));
               setFavorites(formattedFavorites);
             }
@@ -105,9 +101,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const newItem: FavoriteItem = {
         id: uuidv4(),
         productId: product.id,
+        product_id: product.id,
         name: product.name,
+        product_name: product.name,
         price: product.price,
         image: product.image,
+        image_url: product.image,
       };
 
       // If user is logged in, save to database
@@ -150,7 +149,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const removeFromFavorites = async (productId: string) => {
     try {
-      const itemToRemove = favorites.find(item => item.productId === productId);
+      const itemToRemove = favorites.find(item => item.productId === productId || item.product_id === productId);
       
       if (!itemToRemove) {
         return;
@@ -169,7 +168,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       }
 
-      setFavorites(prev => prev.filter(item => item.productId !== productId));
+      setFavorites(prev => prev.filter(item => item.productId !== productId && item.product_id !== productId));
       
       toast({
         title: 'Removed from Favorites',
@@ -186,7 +185,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const isFavorite = (productId: string) => {
-    return favorites.some(item => item.productId === productId);
+    return favorites.some(item => item.productId === productId || item.product_id === productId);
   };
 
   return (

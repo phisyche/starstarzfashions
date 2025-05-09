@@ -20,17 +20,29 @@ export function SiteHeader() {
   const [loggingOut, setLoggingOut] = useState(false);
   
   const handleSignOut = async (e: React.MouseEvent) => {
-    // Prevent default to avoid navigation issues
     e.preventDefault();
+    e.stopPropagation();
     
     try {
       setLoggingOut(true);
-      await signOut();
+      const { error } = await signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Signed out successfully",
         description: "You have been logged out of your account",
       });
-      navigate('/', { replace: true });
+      
+      // Clear any localStorage items that might contain user data
+      localStorage.removeItem('favoriteItems');
+      
+      // Use setTimeout to ensure state updates before navigation
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 100);
     } catch (error) {
       console.error("Logout error:", error);
       toast({

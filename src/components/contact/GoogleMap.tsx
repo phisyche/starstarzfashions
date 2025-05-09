@@ -1,61 +1,63 @@
 
 import { useState, useEffect } from "react";
-import { useLoadScript, GoogleMap as GoogleMapApi, MarkerF } from "@react-google-maps/api";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-const center = { lat: -1.286389, lng: 36.817223 }; // Nairobi coordinates
+// Fix for default marker icons in Leaflet
+let defaultIcon;
+
+// Function to create a custom icon
+const createCustomIcon = () => {
+  return L.icon({
+    iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+};
+
+// The coordinates for Akai Plaza (near Mountain Mall, Thika Road)
+// Approximate location based on the description
+const position: [number, number] = [-1.219, 36.888]; // Latitude, Longitude
 
 export function Map() {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-
-  // Get the API key from environment variables or allow user to enter it
+  // Get or create the default icon
   useEffect(() => {
-    const storedKey = localStorage.getItem("google_maps_api_key");
-    if (storedKey) {
-      setApiKey(storedKey);
-    }
+    defaultIcon = createCustomIcon();
+    
+    // Fix Leaflet's default icon issue
+    L.Marker.prototype.options.icon = defaultIcon;
   }, []);
 
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: apiKey || "AIzaSyC_H0LEH5QhfK8OD45YwT2_fSo5Ax_L0Sc", // Default key (this would be replaced with the user's key)
-  });
-
-  const handleSetApiKey = () => {
-    const key = prompt("Please enter your Google Maps API key:");
-    if (key) {
-      localStorage.setItem("google_maps_api_key", key);
-      setApiKey(key);
-      window.location.reload();
-    }
-  };
-
-  if (!isLoaded) {
-    return (
-      <div className="w-full h-[400px] flex flex-col items-center justify-center bg-gray-100 rounded-lg">
-        <p className="mb-4">Loading map...</p>
-        <button 
-          onClick={handleSetApiKey}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
-        >
-          Set API Key
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <GoogleMapApi
-      zoom={15}
-      center={center}
-      mapContainerClassName="w-full h-[400px] rounded-lg"
-      options={{
-        zoomControl: true,
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: false,
-      }}
-    >
-      <MarkerF position={center} />
-    </GoogleMapApi>
+    <div className="w-full h-[400px] rounded-lg overflow-hidden border">
+      <MapContainer 
+        center={position} 
+        zoom={16} 
+        scrollWheelZoom={false}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={position}>
+          <Popup>
+            <strong>Star Starz Fashions</strong>
+            <p>
+              Akai Plaza Ground Floor,<br />
+              Office No 2 At Rosters<br />
+              Off Thika Superhighway<br />
+              Next to Mountain Mall
+            </p>
+          </Popup>
+        </Marker>
+      </MapContainer>
+    </div>
   );
 }
 

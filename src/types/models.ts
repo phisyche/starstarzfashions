@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -79,4 +78,16 @@ export interface MPesaPaymentResponse {
   responseDescription?: string;
   error?: string;
   orderId?: string;
+}
+
+// Update FavoriteItem interface to match database schema
+export interface FavoriteItem {
+  id: string;
+  productId: string; // For UI compatibility
+  product_id?: string; // For database compatibility
+  name: string; // For UI compatibility
+  product_name?: string; // For database compatibility
+  price: number;
+  image: string;
+  image_url?: string; // For database compatibility
 }
