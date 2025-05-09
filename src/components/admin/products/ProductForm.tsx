@@ -14,8 +14,9 @@ interface ProductFormProps {
   defaultValues: ProductFormValues;
   onSubmit: (data: ProductFormValues) => Promise<void>;
   isSubmitting: boolean;
-  onCancel: () => void;
-  onGenerateSlug: () => void;
+  onCancel?: () => void;
+  onGenerateSlug?: () => void;
+  submitText?: string;
 }
 
 export function ProductForm({
@@ -23,7 +24,8 @@ export function ProductForm({
   onSubmit,
   isSubmitting,
   onCancel,
-  onGenerateSlug
+  onGenerateSlug,
+  submitText = 'Save Product'
 }: ProductFormProps) {
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -63,14 +65,16 @@ export function ProductForm({
               )}
             />
             
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="mt-8" 
-              onClick={onGenerateSlug}
-            >
-              Generate
-            </Button>
+            {onGenerateSlug && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="mt-8" 
+                onClick={onGenerateSlug}
+              >
+                Generate
+              </Button>
+            )}
           </div>
 
           <FormField
@@ -206,14 +210,16 @@ export function ProductForm({
         </div>
 
         <div className="flex justify-end space-x-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
+          {onCancel && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+          )}
           <Button 
             type="submit" 
             disabled={isSubmitting}
@@ -224,7 +230,7 @@ export function ProductForm({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
-            ) : 'Update Product'}
+            ) : submitText}
           </Button>
         </div>
       </form>

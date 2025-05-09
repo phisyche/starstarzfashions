@@ -92,7 +92,7 @@ export const AddToCart: React.FC<AddToCartProps> = ({
           product_id: productId,
           product_name: name,
           price,
-          image: typeof image === 'string' ? getImagePath(image) : '',
+          image_url: typeof image === 'string' ? getImagePath(image) : '',
         };
         await addToFavorites(productData);
       }
@@ -172,4 +172,4 @@ export const AddToCart: React.FC<AddToCartProps> = ({
       </Button>
     </div>
   );
-};
+}

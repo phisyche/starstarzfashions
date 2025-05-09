@@ -464,6 +464,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_profile_by_id: {
+        Args: { profile_id: string }
+        Returns: Json
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

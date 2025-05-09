@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { MainLayout } from '@/components/layout/main-layout';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertCircle, Mail } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -52,13 +52,13 @@ export default function Login() {
     setError(null);
     
     try {
-      const { error } = await signIn({
+      const result = await signIn({
         email: data.email,
         password: data.password,
       });
       
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
       
       toast({

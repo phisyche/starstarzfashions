@@ -123,6 +123,7 @@ export default function AdminAddProduct() {
             defaultValues={defaultValues} 
             onSubmit={onSubmit}
             isSubmitting={loading}
+            onCancel={() => navigate('/admin/products')}
             submitText="Create Product"
           />
         </div>

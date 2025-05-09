@@ -37,7 +37,7 @@ export function Map() {
   return (
     <div className="w-full h-[400px] rounded-lg overflow-hidden border">
       <MapContainer 
-        center={position as any} 
+        center={position} 
         zoom={16} 
         scrollWheelZoom={false}
         style={{ width: "100%", height: "100%" }}
