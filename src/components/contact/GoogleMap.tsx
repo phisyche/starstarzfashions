@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
 // Fix for default marker icons in Leaflet
-let defaultIcon;
+let defaultIcon: L.Icon;
 
 // Function to create a custom icon
 const createCustomIcon = () => {
@@ -30,13 +30,14 @@ export function Map() {
     defaultIcon = createCustomIcon();
     
     // Fix Leaflet's default icon issue
+    // @ts-ignore - this is a valid use case for Leaflet
     L.Marker.prototype.options.icon = defaultIcon;
   }, []);
 
   return (
     <div className="w-full h-[400px] rounded-lg overflow-hidden border">
       <MapContainer 
-        center={position} 
+        center={position as any} 
         zoom={16} 
         scrollWheelZoom={false}
         style={{ width: "100%", height: "100%" }}
