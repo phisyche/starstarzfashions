@@ -12,7 +12,7 @@ export interface AddToCartProps {
 
 export function AddToCart({ productId, className = '' }: AddToCartProps) {
   const [quantity, setQuantity] = useState(1);
-  const { addToCart } = useCart();
+  const { addItem } = useCart();
   const { toast } = useToast();
 
   const decreaseQuantity = () => {
@@ -25,12 +25,40 @@ export function AddToCart({ productId, className = '' }: AddToCartProps) {
     setQuantity(quantity + 1);
   };
 
-  const handleAddToCart = () => {
-    addToCart(productId, quantity);
-    toast({
-      title: "Added to cart",
-      description: `${quantity} item${quantity > 1 ? 's' : ''} added to your cart.`,
-    });
+  const handleAddToCart = async () => {
+    // Get product details before adding to cart
+    try {
+      // First, fetch the product details
+      const response = await fetch(`/api/products/${productId}`);
+      let product = null;
+      
+      if (response.ok) {
+        product = await response.json();
+      } else {
+        // If API fetch fails, use mock product data
+        product = {
+          name: "Product", 
+          price: 0,
+          image: "/placeholder.svg"
+        };
+        console.warn(`Could not fetch product with ID ${productId}, using placeholder data`);
+      }
+      
+      // Add to cart with product details
+      addItem(productId, quantity, product);
+      
+      toast({
+        title: "Added to cart",
+        description: `${quantity} item${quantity > 1 ? 's' : ''} added to your cart.`,
+      });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem adding this item to your cart.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

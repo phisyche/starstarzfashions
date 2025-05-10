@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useSupabase } from '@/context/SupabaseContext';
 import { MainLayout } from '@/components/layout/main-layout';
-import { ProductImages } from '@/components/products/product-images';
+import { ProductGallery } from '@/components/products/product-images';
 import { AddToCart } from '@/components/products/add-to-cart';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -110,7 +110,15 @@ export default function ProductPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
           {/* Product images */}
-          <ProductImages images={product.images || [product.image]} />
+          <ProductGallery images={product.images?.length ? product.images.map((img: string, i: number) => ({
+            id: `img-${i}`,
+            url: img,
+            alt: `${product.name} image ${i+1}`
+          })) : [{
+            id: 'main',
+            url: product.image,
+            alt: product.name
+          }]} />
           
           {/* Product details */}
           <div className="space-y-6">
@@ -125,7 +133,7 @@ export default function ProductPage() {
             
             {product.features && (
               <ul className="list-disc list-inside space-y-1">
-                {product.features.map((feature, index) => (
+                {product.features.map((feature: string, index: number) => (
                   <li key={index}>{feature}</li>
                 ))}
               </ul>

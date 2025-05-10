@@ -1,62 +1,46 @@
 
-import { useState, useEffect } from "react";
-import * as L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-// Fix for default marker icons in Leaflet
-let defaultIcon: L.Icon;
-
-// Function to create a custom icon
-const createCustomIcon = () => {
-  return L.icon({
-    iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-    iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
-};
+import { useState, useEffect, useRef } from "react";
 
 // The coordinates for Akai Plaza (near Mountain Mall, Thika Road)
 // Approximate location based on the description
 const position: [number, number] = [-1.219, 36.888]; // Latitude, Longitude
 
 export function Map() {
-  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !mapLoaded) {
-      // Dynamic imports to avoid SSR issues
-      import('react-leaflet').then(({ MapContainer, TileLayer, Marker, Popup }) => {
-        setMapLoaded(true);
+    if (typeof window === 'undefined' || !mapRef.current || mapLoaded) return;
+
+    // Dynamic imports to avoid SSR issues
+    const loadMap = async () => {
+      try {
+        const L = await import('leaflet');
         
-        // Get or create the default icon
-        defaultIcon = createCustomIcon();
+        // Import CSS
+        import('leaflet/dist/leaflet.css');
         
-        // Fix Leaflet's default icon issue
-        const DefaultIcon = L.Icon.extend({
-          options: {
-            iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-            iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-            shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
-          }
+        // Fix for default marker icons in Leaflet
+        const icon = L.icon({
+          iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+          iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+          shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
         });
         
-        const map = L.map('map-container').setView(position, 16);
-        setMapInstance(map);
+        // Initialize map
+        const map = L.map(mapRef.current).setView(position, 16);
         
+        // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
         
-        const marker = new L.Marker(position, { icon: defaultIcon }).addTo(map);
+        // Add marker
+        const marker = L.marker(position, { icon }).addTo(map);
         marker.bindPopup(`
           <strong>Star Starz Fashions</strong>
           <p>
@@ -66,18 +50,23 @@ export function Map() {
             Next to Mountain Mall
           </p>
         `).openPopup();
-      });
-    }
-    
-    return () => {
-      if (mapInstance) {
-        mapInstance.remove();
+        
+        setMapLoaded(true);
+        
+        // Cleanup function to remove map when component unmounts
+        return () => {
+          map.remove();
+        };
+      } catch (error) {
+        console.error("Error loading map:", error);
       }
     };
-  }, [mapLoaded, mapInstance]);
+    
+    loadMap();
+  }, [mapLoaded]);
 
   return (
-    <div id="map-container" className="w-full h-[400px] rounded-lg overflow-hidden border"></div>
+    <div ref={mapRef} className="w-full h-[400px] rounded-lg overflow-hidden border"></div>
   );
 }
 
