@@ -94,3 +94,23 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     </div>
   );
 };
+
+// Export the ProductImages component for compatibility with existing code
+export const ProductImages: React.FC<{images: ProductImage[] | string[]}> = ({ images }) => {
+  // Convert string[] to ProductImage[] if needed
+  const processedImages = Array.isArray(images) 
+    ? images.map((img, index) => {
+        if (typeof img === 'string') {
+          return {
+            id: `img-${index}`,
+            url: img,
+            alt: `Product image ${index + 1}`
+          };
+        }
+        return img as ProductImage;
+      })
+    : images;
+    
+  return <ProductGallery images={processedImages as ProductImage[]} />;
+};
+

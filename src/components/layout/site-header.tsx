@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -25,11 +24,7 @@ export function SiteHeader() {
     
     try {
       setLoggingOut(true);
-      const { error } = await signOut();
-      
-      if (error) {
-        throw error;
-      }
+      await signOut();
       
       toast({
         title: "Signed out successfully",

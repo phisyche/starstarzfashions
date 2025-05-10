@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import L from "leaflet";
+import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // Fix for default marker icons in Leaflet
@@ -24,7 +24,7 @@ const createCustomIcon = () => {
 const position: [number, number] = [-1.219, 36.888]; // Latitude, Longitude
 
 export function Map() {
-  const [map, setMap] = useState<L.Map | null>(null);
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
@@ -37,16 +37,26 @@ export function Map() {
         defaultIcon = createCustomIcon();
         
         // Fix Leaflet's default icon issue
-        L.Marker.prototype.options.icon = defaultIcon;
+        const DefaultIcon = L.Icon.extend({
+          options: {
+            iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+            iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+            shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          }
+        });
         
-        const mapInstance = L.map('map-container').setView(position, 16);
-        setMap(mapInstance);
+        const map = L.map('map-container').setView(position, 16);
+        setMapInstance(map);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(mapInstance);
+        }).addTo(map);
         
-        const marker = L.marker(position).addTo(mapInstance);
+        const marker = new L.Marker(position, { icon: defaultIcon }).addTo(map);
         marker.bindPopup(`
           <strong>Star Starz Fashions</strong>
           <p>
@@ -60,11 +70,11 @@ export function Map() {
     }
     
     return () => {
-      if (map) {
-        map.remove();
+      if (mapInstance) {
+        mapInstance.remove();
       }
     };
-  }, [mapLoaded]);
+  }, [mapLoaded, mapInstance]);
 
   return (
     <div id="map-container" className="w-full h-[400px] rounded-lg overflow-hidden border"></div>

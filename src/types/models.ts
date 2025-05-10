@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -91,3 +92,4 @@ export interface FavoriteItem {
   image: string;
   image_url?: string; // For database compatibility
 }
+

@@ -134,7 +134,7 @@ export default function ProductPage() {
             <Separator />
             
             <div>
-              <AddToCart product={product} />
+              <AddToCart productId={product.id} />
             </div>
             
             <div className="pt-4 text-sm text-muted-foreground">
