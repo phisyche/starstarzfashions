@@ -58,7 +58,7 @@ declare module 'leaflet' {
   }
 
   export interface Map {
-    setView(center: [number, number], zoom: number): this;
+    setView(center: LatLngExpression, zoom: number): this;
     remove(): this;
   }
 

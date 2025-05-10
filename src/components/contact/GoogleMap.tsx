@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 
 // The coordinates for Akai Plaza (near Mountain Mall, Thika Road)
 // Approximate location based on the description
-const position: [number, number] = [-1.219, 36.888]; // Latitude, Longitude
+const position = { lat: -1.219, lng: 36.888 }; // Using object format for LatLngExpression
 
 export function Map() {
   const mapRef = useRef<HTMLDivElement>(null);
