@@ -9,8 +9,10 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import type { EmblaCarouselType } from "embla-carousel";
+import { supabase } from "@/integrations/supabase/client";
 
-const slides = [
+// Initial slides as fallback if database fetch fails
+const initialSlides = [
   {
     id: 1,
     image: "/new/starstarz/IMG-20250426-WA0006.jpg",
@@ -35,7 +37,40 @@ export function JumbotronSlider() {
   const [api, setApi] = useState<EmblaCarouselType | null>(null);
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [slides, setSlides] = useState(initialSlides);
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch product images from the database
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, description, image')
+          .filter('is_featured', 'eq', true)
+          .limit(4);
+
+        if (error) {
+          console.error("Error fetching featured products:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const productSlides = data.map((product, index) => ({
+            id: index + 1,
+            image: product.image || initialSlides[index % initialSlides.length].image,
+            title: product.name || initialSlides[index % initialSlides.length].title,
+            description: product.description || initialSlides[index % initialSlides.length].description,
+          }));
+          setSlides(productSlides);
+        }
+      } catch (error) {
+        console.error("Error fetching featured products:", error);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
 
   const onSelect = useCallback(() => {
     if (!api) return;

@@ -1,6 +1,6 @@
 
 declare module 'leaflet' {
-  export function map(element: HTMLElement | string): Map;
+  export function map(element: HTMLElement | string, options?: MapOptions): Map;
   export function tileLayer(urlTemplate: string, options?: TileLayerOptions): TileLayer;
   export function marker(latLng: LatLngExpression, options?: MarkerOptions): Marker;
   
@@ -57,21 +57,35 @@ declare module 'leaflet' {
     attribution?: string;
   }
 
+  export interface MapOptions {
+    center?: LatLngExpression;
+    zoom?: number;
+    minZoom?: number;
+    maxZoom?: number;
+    layers?: Layer[];
+    maxBounds?: LatLngBoundsExpression;
+    attributionControl?: boolean;
+    zoomControl?: boolean;
+    scrollWheelZoom?: boolean;
+  }
+
   export interface Map {
     setView(center: LatLngExpression, zoom: number): this;
     remove(): this;
+    addLayer(layer: Layer): this;
   }
-
+  
   export interface Layer {
     addTo(map: Map): this;
   }
-
+  
   export interface TileLayer extends Layer {}
   
-  export interface Marker extends Layer {
-    bindPopup(content: string): this;
-    openPopup(): this;
-  }
-
-  export function icon(options: IconOptions): Icon;
+  export interface Marker extends Layer {}
+  
+  export interface LatLngBoundsExpression {}
+  
+  export type IconFactory = (options: IconOptions) => Icon;
+  
+  export const icon: IconFactory;
 }
