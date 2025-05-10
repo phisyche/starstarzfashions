@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Fix for default marker icons in Leaflet
 let defaultIcon: L.Icon;
@@ -26,42 +25,49 @@ const position: [number, number] = [-1.219, 36.888]; // Latitude, Longitude
 
 export function Map() {
   const [map, setMap] = useState<L.Map | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Get or create the default icon
   useEffect(() => {
-    defaultIcon = createCustomIcon();
+    if (typeof window !== 'undefined' && !mapLoaded) {
+      // Dynamic imports to avoid SSR issues
+      import('react-leaflet').then(({ MapContainer, TileLayer, Marker, Popup }) => {
+        setMapLoaded(true);
+        
+        // Get or create the default icon
+        defaultIcon = createCustomIcon();
+        
+        // Fix Leaflet's default icon issue
+        L.Marker.prototype.options.icon = defaultIcon;
+        
+        const mapInstance = L.map('map-container').setView(position, 16);
+        setMap(mapInstance);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapInstance);
+        
+        const marker = L.marker(position).addTo(mapInstance);
+        marker.bindPopup(`
+          <strong>Star Starz Fashions</strong>
+          <p>
+            Akai Plaza Ground Floor,<br />
+            Office No 2 At Rosters<br />
+            Off Thika Superhighway<br />
+            Next to Mountain Mall
+          </p>
+        `).openPopup();
+      });
+    }
     
-    // Fix Leaflet's default icon issue
-    // @ts-ignore - this is a valid use case for Leaflet
-    L.Marker.prototype.options.icon = defaultIcon;
-  }, []);
+    return () => {
+      if (map) {
+        map.remove();
+      }
+    };
+  }, [mapLoaded]);
 
   return (
-    <div className="w-full h-[400px] rounded-lg overflow-hidden border">
-      <MapContainer 
-        center={position as any} 
-        zoom={16} 
-        scrollWheelZoom={false}
-        style={{ width: "100%", height: "100%" }}
-        whenCreated={setMap as any}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={position}>
-          <Popup>
-            <strong>Star Starz Fashions</strong>
-            <p>
-              Akai Plaza Ground Floor,<br />
-              Office No 2 At Rosters<br />
-              Off Thika Superhighway<br />
-              Next to Mountain Mall
-            </p>
-          </Popup>
-        </Marker>
-      </MapContainer>
-    </div>
+    <div id="map-container" className="w-full h-[400px] rounded-lg overflow-hidden border"></div>
   );
 }
 
