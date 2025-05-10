@@ -13,13 +13,18 @@ export default function AdminDashboard() {
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading data for the dashboard
-    const timer = setTimeout(() => {
-      setIsDataLoading(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    if (isAdmin) {
+      // Initialize data loading
+      setIsDataLoading(true);
+      
+      // Set a timeout to allow for data fetching in child components
+      const timer = setTimeout(() => {
+        setIsDataLoading(false);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAdmin]);
 
   if (loading) {
     return (

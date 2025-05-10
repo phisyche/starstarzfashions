@@ -10,7 +10,8 @@ import {
   LogOut, 
   ChevronDown,
   Users,
-  CreditCard
+  CreditCard,
+  Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 type AdminLayoutProps = {
   children: React.ReactNode;
@@ -33,6 +35,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check for mobile screen
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
   
   // Check for admin permissions and authentication
   useEffect(() => {
@@ -125,43 +144,57 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       title: 'Dashboard',
       icon: LayoutDashboard,
       path: '/admin/dashboard',
+      disabled: false
     },
     {
       title: 'Products',
       icon: Package,
       path: '/admin/products',
+      disabled: false
     },
     {
       title: 'Orders',
       icon: ShoppingBag,
       path: '/admin/orders',
+      disabled: false
     },
     {
       title: 'Customers',
       icon: Users,
       path: '/admin/customers',
-      disabled: true,
+      disabled: false
     },
     {
       title: 'Payments',
       icon: CreditCard,
       path: '/admin/payments',
-      disabled: true,
+      disabled: false
     },
     {
       title: 'Settings',
       icon: Settings,
       path: '/admin/settings',
-      disabled: true,
+      disabled: false
     }
   ];
 
   return (
     <div className="min-h-screen flex bg-gray-50">
+      {/* Mobile sidebar backdrop */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/30 z-10"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       {/* Sidebar */}
       <aside 
-        className={`bg-white border-r shadow-sm fixed md:relative inset-y-0 left-0 z-20 transform transition-all duration-300 ease-in-out
-          ${sidebarOpen ? 'w-64' : 'w-0 md:w-20 overflow-hidden'}`}
+        className={cn(
+          "bg-white border-r shadow-sm fixed md:relative inset-y-0 left-0 z-20 transform transition-all duration-300 ease-in-out",
+          sidebarOpen ? "w-64" : "w-0 md:w-20 overflow-hidden",
+          isMobile && sidebarOpen ? "translate-x-0" : isMobile ? "-translate-x-full" : ""
+        )}
       >
         <div className="flex flex-col h-full">
           <div className="p-4 border-b">
@@ -173,11 +206,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-1 rounded-md hover:bg-gray-100 md:block hidden"
               >
-                {sidebarOpen ? (
-                  <ChevronDown className="rotate-90 h-5 w-5" />
-                ) : (
-                  <ChevronDown className="-rotate-90 h-5 w-5" />
-                )}
+                <ChevronDown className={sidebarOpen ? "rotate-90 h-5 w-5" : "-rotate-90 h-5 w-5"} />
               </button>
             </div>
           </div>
@@ -187,13 +216,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <Link 
                 key={item.title}
                 to={item.disabled ? "#" : item.path}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors
-                  ${isActive(item.path)} 
-                  ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md transition-colors",
+                  isActive(item.path), 
+                  item.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'
+                )}
                 onClick={(e) => item.disabled && e.preventDefault()}
               >
                 <item.icon size={18} />
-                {(sidebarOpen || !sidebarOpen && window.innerWidth < 768) && (
+                {(sidebarOpen || !sidebarOpen && isMobile) && (
                   <span className="truncate">{item.title}</span>
                 )}
               </Link>
@@ -203,7 +234,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="p-4 border-t mt-auto">
             <Button 
               variant="ghost" 
-              className={`w-full justify-${sidebarOpen ? 'start' : 'center'} gap-2 hover:bg-red-50 hover:text-red-600`}
+              className={cn(
+                "w-full gap-2 hover:bg-red-50 hover:text-red-600",
+                sidebarOpen ? "justify-start" : "justify-center"
+              )}
               onClick={handleSignOut}
             >
               <LogOut size={18} />
@@ -223,7 +257,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
-              <ChevronDown className={sidebarOpen ? "rotate-180" : ""} />
+              <Menu size={18} />
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </div>

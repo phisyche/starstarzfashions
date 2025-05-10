@@ -25,6 +25,8 @@ const createCustomIcon = () => {
 const position: [number, number] = [-1.219, 36.888]; // Latitude, Longitude
 
 export function Map() {
+  const [map, setMap] = useState<L.Map | null>(null);
+
   // Get or create the default icon
   useEffect(() => {
     defaultIcon = createCustomIcon();
@@ -37,10 +39,11 @@ export function Map() {
   return (
     <div className="w-full h-[400px] rounded-lg overflow-hidden border">
       <MapContainer 
-        center={position} 
+        center={position as any} 
         zoom={16} 
         scrollWheelZoom={false}
         style={{ width: "100%", height: "100%" }}
+        whenCreated={setMap as any}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

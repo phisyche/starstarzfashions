@@ -49,8 +49,11 @@ export default function AdminLogin() {
       setError(null);
       setIsLoading(true);
       
-      // Sign in the user
-      await signIn(data.email, data.password);
+      // Sign in the user with corrected function call
+      await signIn({
+        email: data.email,
+        password: data.password,
+      });
       
       // The redirect will happen in the useEffect when isAdmin is updated
     } catch (error: any) {

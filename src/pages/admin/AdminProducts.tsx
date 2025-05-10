@@ -21,7 +21,6 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabase } from '@/context/SupabaseContext';
 import { Package, Plus, Search, MoreVertical, Edit, Trash, CheckCircle, XCircle } from 'lucide-react';
-import type { Product } from '@/types/models';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,16 +30,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export default function AdminProducts() {
   const { supabase } = useSupabase();
   const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<any | null>(null);
   
   useEffect(() => {
     fetchProducts();
@@ -56,12 +54,13 @@ export default function AdminProducts() {
       
       if (error) throw error;
       
+      console.log("Fetched products:", data);
       setProducts(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching products:', error);
       toast({
         title: "Error loading products",
-        description: "Please try again later",
+        description: error.message || "Please try again later",
         variant: "destructive",
       });
     } finally {
@@ -85,11 +84,11 @@ export default function AdminProducts() {
         title: "Product deleted",
         description: "The product has been deleted successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting product:', error);
       toast({
         title: "Error deleting product",
-        description: "Please try again later",
+        description: error.message || "Please try again later",
         variant: "destructive",
       });
     }
@@ -98,7 +97,7 @@ export default function AdminProducts() {
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    (product.slug && product.slug.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
   return (
@@ -190,15 +189,15 @@ export default function AdminProducts() {
                         <div>
                           <div className="font-medium">{product.name}</div>
                           <div className="text-sm text-muted-foreground truncate max-w-[200px]">
-                            {product.slug}
+                            {product.slug || ''}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>{product.category}</TableCell>
-                    <TableCell>KES {product.price.toLocaleString()}</TableCell>
+                    <TableCell>KES {(product.price || 0).toLocaleString()}</TableCell>
                     <TableCell>
-                      {product.stock_quantity > 0 ? (
+                      {(product.stock || 0) > 0 ? (
                         <div className="flex items-center">
                           <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
                           <span className="text-sm">In Stock</span>

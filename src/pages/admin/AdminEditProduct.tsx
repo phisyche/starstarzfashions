@@ -1,222 +1,201 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/layout/admin-layout';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { useSupabase } from '@/context/SupabaseContext';
-import { AdminLayout } from '@/components/layout/admin-layout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
-import type { Product } from '@/types/models';
-import type { ProductFormValues } from '@/lib/schemas/product-schema';
+import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 import { ProductForm } from '@/components/admin/products/ProductForm';
-import { ProductImageUpload } from '@/components/admin/products/ProductImageUpload';
+import { generateSlug } from '@/lib/utils';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const productSchema = z.object({
+  name: z.string().min(3, { message: "Product name must be at least 3 characters" }),
+  description: z.string().min(10, { message: "Description must be at least 10 characters" }),
+  price: z.coerce.number().positive({ message: "Price must be positive" }),
+  category: z.string().min(1, { message: "Please select a category" }),
+  image: z.string().optional(),
+  images: z.array(z.string()).optional(),
+  stock: z.coerce.number().nonnegative({ message: "Stock cannot be negative" }).default(0),
+  is_featured: z.boolean().default(false),
+  is_new: z.boolean().default(false),
+  colors: z.array(z.string()).optional(),
+  sizes: z.array(z.string()).optional(),
+  materials: z.array(z.string()).optional(),
+});
+
+type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function AdminEditProduct() {
   const { id } = useParams<{ id: string }>();
-  const { supabase } = useSupabase();
-  const { toast } = useToast();
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-
+  const { toast } = useToast();
+  
   useEffect(() => {
-    async function fetchProduct() {
-      if (!id) return;
-      
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (error) throw error;
-        
-        setProduct(data);
-        setImagePreview(data.image);
-      } catch (error) {
-        console.error('Error fetching product:', error);
-        toast({
-          title: "Error loading product",
-          description: "Could not load product details",
-          variant: "destructive",
-        });
-        navigate('/admin/products');
-      } finally {
-        setIsLoading(false);
-      }
+    if (id) {
+      fetchProduct(id);
     }
-    
-    fetchProduct();
-  }, [id, supabase, toast, navigate]);
-
-  const onImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
+  }, [id]);
   
-  const clearImage = () => {
-    if (product && product.image === imagePreview) {
-      toast({
-        title: "Cannot clear original image",
-        description: "Please upload a new image instead",
-      });
-      return;
-    }
-    
-    setImageFile(null);
-    setImagePreview(product?.image || null);
-    const input = document.getElementById('product-image') as HTMLInputElement;
-    if (input) {
-      input.value = '';
-    }
-  };
-  
-  const generateSlug = () => {
-    if (!product?.name) return;
-    
-    const slug = product.name
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
-    
-    setProduct(prev => prev ? { ...prev, slug } : null);
-  };
-
-  const handleSubmit = async (data: ProductFormValues) => {
-    if (!id) return;
-    
+  async function fetchProduct(productId: string) {
     try {
-      setIsSubmitting(true);
+      setLoading(true);
+      setError(null);
       
-      const updateData: Partial<Product> = { ...data };
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
       
-      if (imageFile) {
-        setIsUploading(true);
-        const fileName = `${uuidv4()}-${imageFile.name}`;
-        const { data: uploadData, error: uploadError } = await supabase
-          .storage
-          .from('product-images')
-          .upload(fileName, imageFile);
-        
-        if (uploadError) throw uploadError;
-        
-        const { data: publicUrlData } = supabase
-          .storage
-          .from('product-images')
-          .getPublicUrl(fileName);
-        
-        updateData.image = publicUrlData.publicUrl;
-        
-        if (product?.images && Array.isArray(product.images)) {
-          updateData.images = [publicUrlData.publicUrl, ...product.images.slice(0, 4)];
-        } else {
-          updateData.images = [publicUrlData.publicUrl];
-        }
+      if (error) throw error;
+      
+      if (!data) {
+        throw new Error('Product not found');
       }
       
-      const { error: updateError } = await supabase
+      console.log("Fetched product:", data);
+      setProduct(data);
+    } catch (error: any) {
+      console.error('Error fetching product:', error);
+      setError(error.message || 'Failed to load product');
+    } finally {
+      setLoading(false);
+    }
+  }
+  
+  const onSubmit = async (data: ProductFormValues) => {
+    try {
+      setSaving(true);
+      
+      // Generate a slug from the product name
+      const slug = generateSlug(data.name);
+      
+      // Prepare the product data
+      const productData = {
+        ...data,
+        slug,
+        images: data.images || [],
+        sizes: data.sizes || [],
+        colors: data.colors || [],
+        materials: data.materials || [],
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Update the product in Supabase
+      const { error } = await supabase
         .from('products')
-        .update(updateData)
+        .update(productData)
         .eq('id', id);
       
-      if (updateError) throw updateError;
+      if (error) throw error;
       
       toast({
         title: "Product updated",
-        description: "The product has been updated successfully",
+        description: `${data.name} has been updated successfully`,
       });
       
+      // Navigate back to the products list
       navigate('/admin/products');
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Error updating product:', error);
       toast({
         title: "Error updating product",
-        description: "Please try again later",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
-      setIsUploading(false);
+      setSaving(false);
     }
   };
-
-  if (isLoading) {
+  
+  if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="flex flex-col items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <h3 className="mt-2">Loading product...</h3>
+        <div className="space-y-6">
+          <div>
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-48 mt-1" />
           </div>
+          
+          <Skeleton className="h-[500px] w-full" />
         </div>
       </AdminLayout>
     );
   }
-
-  if (!product) {
-    return null;
+  
+  if (error || !product) {
+    return (
+      <AdminLayout>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error || "Failed to load product. Please try again."}
+          </AlertDescription>
+        </Alert>
+        
+        <div className="mt-4">
+          <Button onClick={() => navigate('/admin/products')}>
+            Return to Products
+          </Button>
+        </div>
+      </AdminLayout>
+    );
   }
-
-  const defaultValues: ProductFormValues = {
+  
+  const defaultValues: Partial<ProductFormValues> = {
     name: product.name,
-    description: product.description,
-    price: product.price,
-    original_price: product.original_price || null,
-    category: product.category,
-    stock_quantity: product.stock_quantity,
-    slug: product.slug,
+    description: product.description || '',
+    price: product.price || 0,
+    category: product.category || '',
+    image: product.image || '',
+    images: product.images || [],
+    stock: product.stock || 0,
     is_featured: product.is_featured || false,
     is_new: product.is_new || false,
+    colors: product.colors || [],
+    sizes: product.sizes || [],
+    materials: product.materials || [],
   };
-
+  
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Edit Product</h1>
-          <p className="text-muted-foreground">Update product details in your inventory</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Edit Product</h1>
+            <p className="text-muted-foreground">Update product information</p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/admin/products')}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <ProductForm 
-                  defaultValues={defaultValues}
-                  onSubmit={handleSubmit}
-                  isSubmitting={isSubmitting}
-                  onCancel={() => navigate('/admin/products')}
-                  onGenerateSlug={generateSlug}
-                />
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div>
-            <Card>
-              <CardContent className="pt-6">
-                <ProductImageUpload 
-                  imagePreview={imagePreview}
-                  isUploading={isUploading}
-                  onImageChange={onImageChange}
-                  onClearImage={clearImage}
-                  originalImage={product.image}
-                />
-              </CardContent>
-            </Card>
-          </div>
+        <Separator />
+        
+        <div>
+          <ProductForm 
+            defaultValues={defaultValues} 
+            onSubmit={onSubmit}
+            isSubmitting={saving}
+            onCancel={() => navigate('/admin/products')}
+            submitText="Update Product"
+          />
         </div>
       </div>
     </AdminLayout>

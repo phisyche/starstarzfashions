@@ -74,21 +74,17 @@ export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
       // First try to get the admin status from user metadata
       if (user.user_metadata?.isAdmin) {
         setIsAdmin(true);
-        console.log('Admin status: true for user:', user.email);
+        console.log('Admin status from metadata: true for user:', user.email);
       } else {
-        // If not found in metadata, check the profiles table
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
+        // Use our RPC function to check admin status
+        const { data, error } = await supabase.rpc('is_admin');
 
         if (error) {
           console.error('Error checking admin status:', error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(data?.is_admin || false);
-          console.log('Admin status:', data?.is_admin, 'for user:', user.email);
+          setIsAdmin(data || false);
+          console.log('Admin status from function:', data, 'for user:', user.email);
         }
       }
     } catch (error) {
@@ -105,8 +101,7 @@ export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
       setProfileLoading(true);
       setProfileError(null);
       
-      // Use a security definer function or use a direct is_profile_owner check
-      // to avoid RLS recursion issues
+      // Use our security definer function to safely get profile
       const { data, error } = await supabase
         .rpc('get_profile_by_id', { profile_id: userId });
       
@@ -114,17 +109,21 @@ export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error fetching profile:', error);
         setProfileError(error);
         
-        // Fallback to direct fetch with cautious RLS approach
-        const directResult = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-          
-        if (directResult.error) {
-          console.error('Error in fallback profile fetch:', directResult.error);
-        } else {
-          setProfileData(directResult.data);
+        // If the RPC fails, try direct fetch with caution
+        try {
+          const directResult = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+          if (directResult.error) {
+            console.error('Error in fallback profile fetch:', directResult.error);
+          } else {
+            setProfileData(directResult.data);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback fetch error:', fallbackError);
         }
       } else {
         setProfileData(data);
