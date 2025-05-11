@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import * as L from 'leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 interface MapProps {
@@ -22,7 +22,7 @@ export function GoogleMap({
 
     // Create map instance if it doesn't exist
     if (!mapInstanceRef.current) {
-      mapInstanceRef.current = L.map(mapRef.current).setView(center, zoom);
+      mapInstanceRef.current = L.map(mapRef.current).setView([center.lat, center.lng], zoom);
 
       // Add OpenStreetMap layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -41,12 +41,12 @@ export function GoogleMap({
         shadowSize: [41, 41]
       });
 
-      const marker = L.marker(center, { icon: defaultIcon }).addTo(mapInstanceRef.current);
+      const marker = L.marker([center.lat, center.lng], { icon: defaultIcon }).addTo(mapInstanceRef.current);
       marker.bindPopup(`<b>${markerText}</b>`);
       marker.openPopup();
     } else {
       // Update map if it already exists
-      mapInstanceRef.current.setView(center, zoom);
+      mapInstanceRef.current.setView([center.lat, center.lng], zoom);
     }
 
     // Cleanup on unmount

@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -13,7 +14,12 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   optimizeDeps: {
-    include: ['leaflet'], // Added Leaflet to optimizeDeps
+    include: ['leaflet'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/leaflet/, /node_modules/],
+    },
   },
   plugins: [
     react(),
