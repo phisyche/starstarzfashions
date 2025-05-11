@@ -11,26 +11,38 @@ import {
 import type { EmblaCarouselType } from "embla-carousel";
 import { supabase } from "@/integrations/supabase/client";
 
-// Initial slides as fallback if database fetch fails
+// Define the uploaded images to use for the jumbotron if database fetch fails
 const initialSlides = [
   {
     id: 1,
-    image: "/new/starstarz/IMG-20250426-WA0006.jpg",
+    image: "/lovable-uploads/07c800e0-37c5-4b53-b41a-e4d279546a58.png",
     title: "African Print Collection",
     description: "Embrace culture with our vibrant African-inspired designs",
   },
   {
     id: 2,
-    image: "/new/starstarz/IMG-20250426-WA0002.jpg",
+    image: "/lovable-uploads/a8070a6f-3f4a-4e83-b530-1f35da1e7893.png",
     title: "Modern Elegance",
     description: "Contemporary fashion that blends tradition with modern aesthetics",
   },
   {
     id: 3,
-    image: "/new/starstarz/IMG-20250426-WA0007.jpg",
+    image: "/lovable-uploads/7f3ddbf3-a8c4-4b91-86a9-f5f1c19e8cff.png",
     title: "Casual & Stylish",
     description: "Everyday comfort with our uniquely crafted casual wear",
   },
+  {
+    id: 4,
+    image: "/lovable-uploads/e6c10f91-afbd-42b1-8571-a219bc4c7ed1.png",
+    title: "Urban Fashion",
+    description: "Stand out with our trendy urban fashion collection",
+  },
+  {
+    id: 5,
+    image: "/lovable-uploads/b4662353-e7aa-4599-90c9-cc585cd97dea.png",
+    title: "Vibrant Collection",
+    description: "Bold and beautiful styles for the fashion-forward",
+  }
 ];
 
 export function JumbotronSlider() {
@@ -44,19 +56,20 @@ export function JumbotronSlider() {
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
-        const { data, error } = await supabase
+        // First try to get featured products from database
+        const { data: productsData, error } = await supabase
           .from('products')
           .select('id, name, description, image')
           .filter('is_featured', 'eq', true)
-          .limit(4);
+          .limit(5);
 
         if (error) {
           console.error("Error fetching featured products:", error);
           return;
         }
 
-        if (data && data.length > 0) {
-          const productSlides = data.map((product, index) => ({
+        if (productsData && productsData.length > 0) {
+          const productSlides = productsData.map((product, index) => ({
             id: index + 1,
             image: product.image || initialSlides[index % initialSlides.length].image,
             title: product.name || initialSlides[index % initialSlides.length].title,
@@ -65,7 +78,7 @@ export function JumbotronSlider() {
           setSlides(productSlides);
         }
       } catch (error) {
-        console.error("Error fetching featured products:", error);
+        console.error("Error in fetching featured products:", error);
       }
     };
 
@@ -89,7 +102,7 @@ export function JumbotronSlider() {
         setTimeout(() => setIsTransitioning(false), 500); // Reduced from 800ms to 500ms for faster transition
       }
       resetAutoplay();
-    }, 4000); // Reduced from 5000ms to 4000ms for faster slides
+    }, 4000); // 4 seconds per slide
   }, [api]);
 
   const stopAutoplay = useCallback(() => {

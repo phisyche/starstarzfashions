@@ -3,6 +3,7 @@ declare module 'leaflet' {
   export function map(element: HTMLElement | string, options?: MapOptions): Map;
   export function tileLayer(urlTemplate: string, options?: TileLayerOptions): TileLayer;
   export function marker(latLng: LatLngExpression, options?: MarkerOptions): Marker;
+  export function icon(options: IconOptions): Icon;
   
   export interface LeafletEvent {
     originalEvent: Event;
@@ -81,11 +82,10 @@ declare module 'leaflet' {
   
   export interface TileLayer extends Layer {}
   
-  export interface Marker extends Layer {}
+  export interface Marker extends Layer {
+    bindPopup(content: string): this;
+    openPopup(): this;
+  }
   
   export interface LatLngBoundsExpression {}
-  
-  export type IconFactory = (options: IconOptions) => Icon;
-  
-  export const icon: IconFactory;
 }

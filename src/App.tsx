@@ -1,87 +1,191 @@
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { SupabaseProvider } from './context/SupabaseContext';
-import { ThemeProvider } from '@/components/ThemeProvider';
-import { CartProvider } from '@/context/CartContext';
-import { FavoritesProvider } from '@/context/FavoritesContext';
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Index from "@/pages/Index";
+import NotFound from "@/pages/NotFound";
+import HomePage from "@/pages/HomePage";
+import ShopPage from "@/pages/ShopPage";
+import Shop from "@/pages/Shop";
+import ProductPage from "@/pages/ProductPage";
+import AboutPage from "@/pages/AboutPage";
+import ContactPage from "@/pages/ContactPage";
+import Collections from "@/pages/Collections";
+import CollectionPage from "@/pages/CollectionPage";
+import CollectionDetail from "@/pages/CollectionDetail";
+import AccountPage from "@/pages/AccountPage";
+import CartPage from "@/pages/CartPage";
+import CheckoutPage from "@/pages/CheckoutPage";
+import OrderSuccessPage from "@/pages/OrderSuccessPage";
+import FaqPage from "@/pages/FaqPage";
+import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
+import Callback from "@/pages/auth/Callback";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import TermsPage from "@/pages/TermsPage";
+import CategoryDetail from "@/pages/CategoryDetail";
+import OrderConfirmationPage from "@/pages/OrderConfirmationPage";
+import OrderDetailPage from "@/pages/OrderDetailPage";
+import NotFoundPage from "@/pages/NotFoundPage";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminProducts from "@/pages/admin/AdminProducts";
+import AdminAddProduct from "@/pages/admin/AdminAddProduct";
+import AdminEditProduct from "@/pages/admin/AdminEditProduct";
+import AdminOrders from "@/pages/admin/AdminOrders";
+import AdminViewOrder from "@/pages/admin/AdminViewOrder";
+import AdminCustomers from "@/pages/admin/AdminCustomers";
+import AdminPayments from "@/pages/admin/AdminPayments";
+import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminLogin from "@/pages/admin/AdminLogin";
+import SupabaseSetupGuide from "@/pages/admin/SupabaseSetupGuide";
+import "@/App.css";
 
-// Import pages
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/auth/Login';
-import RegisterPage from './pages/auth/Register';
-import ShopPage from './pages/ShopPage';
-import ProductPage from './pages/ProductPage';
-import CartPage from './pages/CartPage';
-import CheckoutPage from './pages/CheckoutPage';
-import OrderSuccessPage from './pages/OrderSuccessPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import AccountPage from './pages/AccountPage';
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminAddProduct from './pages/admin/AdminAddProduct';
-import AdminEditProduct from './pages/admin/AdminEditProduct';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminCustomers from './pages/admin/AdminCustomers';
-import AdminPayments from './pages/admin/AdminPayments';
-import AdminSettings from './pages/admin/AdminSettings';
-import NotFoundPage from './pages/NotFoundPage';
-
-// Create a query client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Index />,
+    errorElement: <NotFoundPage />
   },
-});
+  {
+    path: "/home",
+    element: <HomePage />,
+  },
+  {
+    path: "/shop",
+    element: <Shop />,
+  },
+  {
+    path: "/shop/:category",
+    element: <ShopPage />,
+  },
+  {
+    path: "/product/:slug",
+    element: <ProductPage />,
+  },
+  {
+    path: "/about",
+    element: <AboutPage />,
+  },
+  {
+    path: "/contact",
+    element: <ContactPage />,
+  },
+  {
+    path: "/collections",
+    element: <Collections />,
+  },
+  {
+    path: "/collections/:slug",
+    element: <CollectionPage />,
+  },
+  {
+    path: "/collection/:slug",
+    element: <CollectionDetail />,
+  },
+  {
+    path: "/category/:slug",
+    element: <CategoryDetail />,
+  },
+  {
+    path: "/account",
+    element: <AccountPage />,
+  },
+  {
+    path: "/account/:tab",
+    element: <AccountPage />,
+  },
+  {
+    path: "/cart",
+    element: <CartPage />,
+  },
+  {
+    path: "/checkout",
+    element: <CheckoutPage />,
+  },
+  {
+    path: "/order/success",
+    element: <OrderSuccessPage />,
+  },
+  {
+    path: "/order/confirmation/:id",
+    element: <OrderConfirmationPage />,
+  },
+  {
+    path: "/order/:id",
+    element: <OrderDetailPage />,
+  },
+  {
+    path: "/faq",
+    element: <FaqPage />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    path: "/auth/callback",
+    element: <Callback />,
+  },
+  {
+    path: "/privacy-policy",
+    element: <PrivacyPolicyPage />,
+  },
+  {
+    path: "/terms",
+    element: <TermsPage />,
+  },
+  {
+    path: "/admin",
+    element: <AdminDashboard />,
+  },
+  {
+    path: "/admin/products",
+    element: <AdminProducts />,
+  },
+  {
+    path: "/admin/products/add",
+    element: <AdminAddProduct />,
+  },
+  {
+    path: "/admin/products/edit/:id",
+    element: <AdminEditProduct />,
+  },
+  {
+    path: "/admin/orders",
+    element: <AdminOrders />,
+  },
+  {
+    path: "/admin/orders/:id",
+    element: <AdminViewOrder />,
+  },
+  {
+    path: "/admin/customers",
+    element: <AdminCustomers />,
+  },
+  {
+    path: "/admin/payments",
+    element: <AdminPayments />,
+  },
+  {
+    path: "/admin/settings",
+    element: <AdminSettings />,
+  },
+  {
+    path: "/admin/login",
+    element: <AdminLogin />,
+  },
+  {
+    path: "/admin/supabase-setup",
+    element: <SupabaseSetupGuide />,
+  },
+  {
+    path: "*",
+    element: <NotFoundPage />,
+  },
+]);
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <SupabaseProvider>
-          <CartProvider>
-            <FavoritesProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/shop" element={<ShopPage />} />
-                  <Route path="/product/:slug" element={<ProductPage />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/order/success" element={<OrderSuccessPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/account/*" element={<AccountPage />} />
-                  
-                  {/* Admin Routes */}
-                  <Route path="/admin" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                  <Route path="/admin/products" element={<AdminProducts />} />
-                  <Route path="/admin/products/add" element={<AdminAddProduct />} />
-                  <Route path="/admin/products/edit/:id" element={<AdminEditProduct />} />
-                  <Route path="/admin/orders" element={<AdminOrders />} />
-                  <Route path="/admin/customers" element={<AdminCustomers />} />
-                  <Route path="/admin/payments" element={<AdminPayments />} />
-                  <Route path="/admin/settings" element={<AdminSettings />} />
-                  
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-                <Toaster />
-              </BrowserRouter>
-            </FavoritesProvider>
-          </CartProvider>
-        </SupabaseProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
+export default function App() {
+  return <RouterProvider router={router} />;
 }
-
-export default App;

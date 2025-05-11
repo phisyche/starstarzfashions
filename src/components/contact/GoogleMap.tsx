@@ -42,7 +42,8 @@ export function GoogleMap({
       });
 
       const marker = L.marker(center, { icon: defaultIcon }).addTo(mapInstanceRef.current);
-      marker.bindPopup(`<b>${markerText}</b>`).openPopup();
+      marker.bindPopup(`<b>${markerText}</b>`);
+      marker.openPopup();
     } else {
       // Update map if it already exists
       mapInstanceRef.current.setView(center, zoom);
