@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -39,11 +39,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Price } from '@/components/ui/price';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ShoppingBag, Heart, HeartOff, Package, User as UserIcon, AlertCircle, Settings, CreditCard, LogOut, Mail, User, Eye, Edit, Trash2, BarChart } from 'lucide-react';
-import { from, supabase } from '@/integrations/supabase/client';
+import { ShoppingBag, Heart, HeartOff, Package, User as UserIcon, AlertCircle, Settings, CreditCard, LogOut, Mail, User, Eye, Edit, Trash2 } from 'lucide-react';
+import { from } from '@/integrations/supabase/client';
 import { AccountDashboard } from '@/components/account/account-dashboard';
 import { formatDate, cn } from '@/lib/utils';
-import { AccountAnalytics } from '@/components/account/AccountAnalytics';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AddressData {
   line1: string;
@@ -66,16 +66,13 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function AccountPage() {
-  // Get tab parameter from URL
-  const { tab } = useParams();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [tab, setTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
   const [profileData, setProfileData] = useState<any>(null);
-  const [profileError, setProfileError] = useState<string | null>(null);
   const [updatingEmail, setUpdatingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState('');
-  const { user, signOut, updateEmail } = useSupabase();
+  const { user, supabase, signOut, updateEmail } = useSupabase();
   const { favorites, loading: favLoading, removeFromFavorites } = useFavorites();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -93,74 +90,31 @@ export default function AccountPage() {
       postal_code: '',
     },
   });
-
-  // Set active tab from URL parameter
-  useEffect(() => {
-    if (tab && ['dashboard', 'profile', 'orders', 'favorites', 'analytics'].includes(tab)) {
-      setActiveTab(tab);
-    }
-  }, [tab]);
   
   // Check if user is authenticated
   useEffect(() => {
     if (!user) {
-      navigate('/login', { replace: true, state: { returnUrl: `/account/${activeTab}` } });
+      navigate('/login', { replace: true });
     } else {
       fetchUserData();
       fetchOrders();
     }
-  }, [user, navigate, activeTab]);
+  }, [user, navigate]);
   
-  // Fetch user profile data directly
+  // Fetch user profile data
   const fetchUserData = async () => {
-    if (!user) return;
+    if (!user || !supabase) return;
     
     try {
-      setLoading(true);
-      setProfileError(null);
-      
-      console.log('Fetching profile for user ID:', user.id);
-      
-      // Try the new approach using direct fetch with proper error handling
-      const { data, error } = await supabase
-        .from('profiles')
+      const { data, error } = await from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
-      if (error) {
-        console.error('Error fetching profile:', error);
-        setProfileError(`Failed to load profile: ${error.message}`);
-        
-        // Create profile if it doesn't exist (potential fix for missing profile)
-        if (error.code === 'PGRST116') {
-          try {
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert({ 
-                id: user.id,
-                email: user.email,
-                updated_at: new Date().toISOString()
-              });
-              
-            if (!insertError) {
-              toast({
-                title: "Profile created",
-                description: "Your profile has been created successfully."
-              });
-              
-              // Try fetching again
-              fetchUserData();
-            } else {
-              console.error('Error creating profile:', insertError);
-            }
-          } catch (createError) {
-            console.error('Error creating profile:', createError);
-          }
-        }
-      } else if (data) {
+      if (error) throw error;
+      
+      if (data) {
         setProfileData(data);
-        setProfileError(null);
         
         // Get the address as an object with proper typing
         const address: AddressData = data.address as AddressData || {
@@ -185,9 +139,13 @@ export default function AccountPage() {
         // Set email for potential update
         setNewEmail(user.email || '');
       }
-    } catch (error: any) {
-      console.error('Error in fetchUserData:', error);
-      setProfileError(`Unexpected error: ${error.message}`);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load profile data.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -226,7 +184,7 @@ export default function AccountPage() {
   
   // Handle profile update
   const onSubmit = async (values: ProfileFormValues) => {
-    if (!user) return;
+    if (!user || !supabase) return;
     
     setLoading(true);
     
@@ -239,8 +197,7 @@ export default function AccountPage() {
         postal_code: values.postal_code
       };
       
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await from('profiles')
         .update({
           first_name: values.first_name,
           last_name: values.last_name,
@@ -259,11 +216,11 @@ export default function AccountPage() {
       
       // Refresh profile data
       await fetchUserData();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: 'Error',
-        description: `Failed to update profile: ${error.message}`,
+        description: 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -273,7 +230,7 @@ export default function AccountPage() {
   
   // Handle email update
   const handleEmailUpdate = async () => {
-    if (!user || !newEmail) return;
+    if (!user || !supabase || !newEmail) return;
     
     if (newEmail === user.email) {
       toast({
@@ -286,13 +243,8 @@ export default function AccountPage() {
     try {
       setUpdatingEmail(true);
       await updateEmail(newEmail);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating email:', error);
-      toast({
-        title: 'Error',
-        description: `Failed to update email: ${error.message}`,
-        variant: 'destructive',
-      });
     } finally {
       setUpdatingEmail(false);
     }
@@ -302,11 +254,11 @@ export default function AccountPage() {
     try {
       await signOut();
       navigate('/', { replace: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error during logout:', error);
       toast({
         title: 'Error',
-        description: `Failed to sign out: ${error.message}`,
+        description: 'Failed to sign out. Please try again.',
         variant: 'destructive',
       });
     }
@@ -342,12 +294,6 @@ export default function AccountPage() {
             <div className="flex-1">
               <h1 className="text-3xl font-bold">{fullName}</h1>
               <p className="text-muted-foreground">{user.email}</p>
-              {profileError && (
-                <p className="text-sm text-red-500 mt-1">
-                  <AlertCircle className="h-3 w-3 inline mr-1" />
-                  {profileError}
-                </p>
-              )}
             </div>
             <Button variant="outline" onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4" /> Sign Out
@@ -357,26 +303,22 @@ export default function AccountPage() {
       </div>
       
       <div className="container max-w-6xl py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <Tabs value={tab} onValueChange={setTab} className="space-y-8">
           <div className="flex justify-between border-b overflow-x-auto">
-            <TabsList className="grid grid-cols-5 w-full sm:w-auto">
-              <TabsTrigger value="dashboard" className="flex gap-2 items-center" onClick={() => navigate('/account/dashboard')}>
+            <TabsList className="grid grid-cols-4 w-full sm:w-auto">
+              <TabsTrigger value="dashboard" className="flex gap-2 items-center">
                 <UserIcon className="w-4 h-4" />
                 <span>Dashboard</span>
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex gap-2 items-center" onClick={() => navigate('/account/analytics')}>
-                <BarChart className="w-4 h-4" />
-                <span>Analytics</span>
-              </TabsTrigger>
-              <TabsTrigger value="profile" className="flex gap-2 items-center" onClick={() => navigate('/account/profile')}>
+              <TabsTrigger value="profile" className="flex gap-2 items-center">
                 <User className="w-4 h-4" />
                 <span>Profile</span>
               </TabsTrigger>
-              <TabsTrigger value="orders" className="flex gap-2 items-center" onClick={() => navigate('/account/orders')}>
+              <TabsTrigger value="orders" className="flex gap-2 items-center">
                 <ShoppingBag className="w-4 h-4" />
                 <span>Orders</span>
               </TabsTrigger>
-              <TabsTrigger value="favorites" className="flex gap-2 items-center" onClick={() => navigate('/account/favorites')}>
+              <TabsTrigger value="favorites" className="flex gap-2 items-center">
                 <Heart className="w-4 h-4" />
                 <span>Favorites</span>
               </TabsTrigger>
@@ -399,27 +341,8 @@ export default function AccountPage() {
               <div className="text-center py-16">
                 <h2 className="text-2xl font-bold mb-4">Welcome to Your Dashboard</h2>
                 <p className="text-muted-foreground mb-6">Complete your profile to get personalized recommendations and track your orders.</p>
-                <Button onClick={() => setActiveTab('profile')}>Complete Your Profile</Button>
+                <Button onClick={() => setTab('profile')}>Complete Your Profile</Button>
               </div>
-            )}
-          </TabsContent>
-          
-          {/* Analytics Tab */}
-          <TabsContent value="analytics">
-            {loading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-48 w-full" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Skeleton className="h-64 w-full" />
-                  <Skeleton className="h-64 w-full" />
-                </div>
-              </div>
-            ) : (
-              <AccountAnalytics 
-                userData={profileData} 
-                orderData={orders} 
-                favoriteData={favorites} 
-              />
             )}
           </TabsContent>
           
@@ -688,15 +611,7 @@ export default function AccountPage() {
                           {(order.order_items || []).slice(0, 2).map((item: any) => (
                             <div key={item.id} className="p-4 flex items-center gap-4">
                               <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
-                                {item.image_url ? (
-                                  <img 
-                                    src={item.image_url} 
-                                    alt={item.product_name} 
-                                    className="h-full w-full object-cover rounded-md"
-                                  />
-                                ) : (
-                                  <Package className="h-8 w-8 text-muted-foreground/40" />
-                                )}
+                                <Package className="h-8 w-8 text-muted-foreground/40" />
                               </div>
                               <div className="flex-1">
                                 <div className="font-medium">{item.product_name}</div>
@@ -718,7 +633,7 @@ export default function AccountPage() {
                       </CardContent>
                       <CardFooter className="flex justify-between bg-muted/30">
                         <Button variant="ghost" size="sm" asChild>
-                          <Link to={`/order/${order.id}`}>View Details</Link>
+                          <Link to={`/account/orders/${order.id}`}>View Details</Link>
                         </Button>
                         {order.status === 'delivered' && (
                           <Button variant="outline" size="sm">Track Package</Button>
@@ -767,9 +682,9 @@ export default function AccountPage() {
                   {favorites.map((item) => (
                     <Card key={item.id} className="overflow-hidden">
                       <div className="aspect-square relative bg-muted">
-                        {item.image_url ? (
+                        {item.image ? (
                           <img 
-                            src={item.image_url} 
+                            src={item.image} 
                             alt={item.product_name} 
                             className="object-cover w-full h-full"
                           />

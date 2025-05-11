@@ -1,5 +1,5 @@
 
-import { createBrowserRouter, RouterProvider, ScrollRestoration } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import HomePage from "@/pages/HomePage";
@@ -42,7 +42,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <Index />,
-    errorElement: <NotFoundPage />,
+    errorElement: <NotFoundPage />
   },
   {
     path: "/home",
@@ -136,13 +136,8 @@ const router = createBrowserRouter([
     path: "/terms",
     element: <TermsPage />,
   },
-  // Fix the admin routes
   {
     path: "/admin",
-    element: <AdminDashboard />,
-  },
-  {
-    path: "/admin/dashboard",
     element: <AdminDashboard />,
   },
   {
@@ -191,16 +186,6 @@ const router = createBrowserRouter([
   },
 ]);
 
-// Create a wrapper component for scroll restoration
-function AppWithScrollRestoration() {
-  return (
-    <>
-      <RouterProvider router={router} />
-      <ScrollRestoration />
-    </>
-  );
-}
-
 export default function App() {
-  return <AppWithScrollRestoration />;
+  return <RouterProvider router={router} />;
 }

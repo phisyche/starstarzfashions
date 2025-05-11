@@ -12,11 +12,6 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // Make sure page loads at the top
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   useEffect(() => {
     if (isAdmin) {
       // Initialize data loading
