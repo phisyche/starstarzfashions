@@ -181,6 +181,10 @@ const router = createBrowserRouter([
     element: <SupabaseSetupGuide />,
   },
   {
+  path: "/admin/dashboard",
+  element: <AdminDashboard />,
+  },
+  {
     path: "*",
     element: <NotFoundPage />,
   },
