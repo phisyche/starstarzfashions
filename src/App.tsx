@@ -185,9 +185,13 @@ const router = createBrowserRouter([
   element: <AdminDashboard />,
   },
   {
-  path: "/order/confirmation/:id",
+  path: "/order-confirmation",
   element: <OrderConfirmationPage />,
   },
+  // {
+  // path: "/order/confirmation/:id",
+  // element: <OrderConfirmationPage />,
+  // },
   {
     path: "*",
     element: <NotFoundPage />,
