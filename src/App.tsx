@@ -104,10 +104,10 @@ const router = createBrowserRouter([
     path: "/order/success",
     element: <OrderSuccessPage />,
   },
-  {
-    path: "/order/confirmation/:id",
-    element: <OrderConfirmationPage />,
-  },
+  // {
+  //   path: "/order/confirmation/:id",
+  //   element: <OrderConfirmationPage />,
+  // },
   {
     path: "/order/:id",
     element: <OrderDetailPage />,
