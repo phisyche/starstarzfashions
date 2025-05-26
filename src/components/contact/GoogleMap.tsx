@@ -10,7 +10,7 @@ interface MapProps {
 }
 
 export function GoogleMap({ 
-  center = { lat: -1.286389, lng: 36.817223 }, // Default to Nairobi
+  center = { lat: -1.232959802462092, lng: 36.8731920573351 },
   zoom = 15,
   markerText = "StarStarz Fashion Boutique"
 }: MapProps) {
