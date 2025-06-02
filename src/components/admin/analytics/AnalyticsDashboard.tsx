@@ -1,682 +1,330 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format } from 'date-fns';
-import { Activity, ShoppingBag, Users, CreditCard, TrendingUp, Package, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSupabase } from '@/context/SupabaseContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatPrice } from '@/lib/utils';
+import { Package, Users, CreditCard, TrendingUp, ShoppingBag, Star } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
-// Type definitions
-interface SalesData {
-  date: string;
-  sales: number;
-}
-
-interface CategoryData {
-  name: string;
-  value: number;
-}
-
-interface OrderStatus {
-  status: string;
-  count: number;
-}
-
-interface ProductStock {
-  name: string;
-  stock: number;
-}
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export function AnalyticsDashboard() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<'week' | 'month' | 'year'>('week');
-  const [overview, setOverview] = useState({
-    totalSales: 0,
-    totalOrders: 0,
-    totalCustomers: 0,
-    pendingOrders: 0
+  const { supabase } = useSupabase();
+
+  // Fetch orders data
+  const { data: orders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['admin-orders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles:user_id (email, first_name, last_name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
-  const [salesData, setSalesData] = useState<SalesData[]>([]);
-  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
-  const [orderStatusData, setOrderStatusData] = useState<OrderStatus[]>([]);
-  const [stockData, setStockData] = useState<ProductStock[]>([]);
 
-  // Fetch all analytics data
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        await Promise.all([
-          fetchOverviewData(),
-          fetchSalesData(),
-          fetchCategoryData(),
-          fetchOrderStatusData(),
-          fetchStockData()
-        ]);
-      } catch (error) {
-        console.error("Error fetching analytics data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [timeframe]);
-
-  // Fetch general metrics
-  const fetchOverviewData = async () => {
-    try {
-      // Get total sales
-      const { data: salesData, error: salesError } = await supabase
-        .from('orders')
-        .select('total_amount');
-      
-      if (salesError) throw salesError;
-
-      // Get total orders
-      const { count: ordersCount, error: ordersError } = await supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: false });
-      
-      if (ordersError) throw ordersError;
-
-      // Get unique customers
-      const { count: customersCount, error: customersError } = await supabase
-        .from('orders')
-        .select('user_id', { count: 'exact', head: false })
-        .not('user_id', 'is', null);
-      
-      if (customersError) throw customersError;
-
-      // Get pending orders
-      const { count: pendingCount, error: pendingError } = await supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: false })
-        .eq('status', 'pending');
-      
-      if (pendingError) throw pendingError;
-
-      // Calculate total sales
-      const totalSales = salesData?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-      
-      setOverview({
-        totalSales,
-        totalOrders: ordersCount || 0,
-        totalCustomers: customersCount || 0,
-        pendingOrders: pendingCount || 0
-      });
-    } catch (error) {
-      console.error("Error fetching overview data:", error);
-    }
-  };
-
-  // Fetch sales data for charts
-  const fetchSalesData = async () => {
-    try {
-      let daysToLookBack = 7;
-      
-      if (timeframe === 'month') {
-        daysToLookBack = 30;
-      } else if (timeframe === 'year') {
-        daysToLookBack = 365;
-      }
-      
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysToLookBack);
-      
-      const { data, error } = await supabase
-        .from('orders')
-        .select('created_at, total_amount')
-        .gte('created_at', startDate.toISOString());
-      
-      if (error) throw error;
-      
-      // Process the data for the chart
-      const groupedData: Record<string, number> = {};
-      
-      data?.forEach(order => {
-        const date = new Date(order.created_at);
-        let formattedDate;
-        
-        if (timeframe === 'week') {
-          formattedDate = format(date, 'EEE'); // Mon, Tue, etc.
-        } else if (timeframe === 'month') {
-          formattedDate = format(date, 'dd MMM'); // 01 Jan, 02 Jan, etc.
-        } else {
-          formattedDate = format(date, 'MMM'); // Jan, Feb, etc.
-        }
-        
-        groupedData[formattedDate] = (groupedData[formattedDate] || 0) + Number(order.total_amount);
-      });
-      
-      // Convert the grouped data to the format needed by recharts
-      const chartData = Object.keys(groupedData).map(date => ({
-        date,
-        sales: groupedData[date]
-      }));
-      
-      // Add sample data if no data is available
-      if (chartData.length === 0) {
-        if (timeframe === 'week') {
-          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-          setSalesData(days.map(day => ({ date: day, sales: Math.floor(Math.random() * 10000) })));
-        } else if (timeframe === 'month') {
-          const sampleData = Array.from({ length: 30 }, (_, i) => ({
-            date: format(new Date(2023, 0, i + 1), 'dd MMM'),
-            sales: Math.floor(Math.random() * 10000)
-          }));
-          setSalesData(sampleData);
-        } else {
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          setSalesData(months.map(month => ({ date: month, sales: Math.floor(Math.random() * 50000) })));
-        }
-      } else {
-        setSalesData(chartData);
-      }
-    } catch (error) {
-      console.error("Error fetching sales data:", error);
-      // Add some sample data if the fetch fails
-      setSalesData([
-        { date: "Mon", sales: 4000 },
-        { date: "Tue", sales: 3000 },
-        { date: "Wed", sales: 2000 },
-        { date: "Thu", sales: 2780 },
-        { date: "Fri", sales: 1890 },
-        { date: "Sat", sales: 2390 },
-        { date: "Sun", sales: 3490 }
-      ]);
-    }
-  };
-
-  // Fetch category distribution data
-  const fetchCategoryData = async () => {
-    try {
+  // Fetch products data
+  const { data: products, isLoading: productsLoading } = useQuery({
+    queryKey: ['admin-products'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('category');
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch users data
+  const { data: users, isLoading: usersLoading } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      // Count products per category
-      const categoryCount: Record<string, number> = {};
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Calculate analytics
+  const totalRevenue = orders?.reduce((sum, order) => 
+    order.payment_status === 'completed' ? sum + Number(order.total_amount) : sum, 0) || 0;
+  
+  const totalOrders = orders?.length || 0;
+  const totalProducts = products?.length || 0;
+  const totalUsers = users?.length || 0;
+  
+  const pendingOrders = orders?.filter(order => order.status === 'pending').length || 0;
+  const completedOrders = orders?.filter(order => order.status === 'delivered').length || 0;
+  const processingOrders = orders?.filter(order => order.status === 'processing').length || 0;
+
+  // Prepare chart data
+  const orderStatusData = [
+    { name: 'Pending', value: pendingOrders, color: '#FFBB28' },
+    { name: 'Processing', value: processingOrders, color: '#0088FE' },
+    { name: 'Completed', value: completedOrders, color: '#00C49F' },
+  ].filter(item => item.value > 0);
+
+  // Monthly revenue data (last 6 months)
+  const monthlyRevenue = React.useMemo(() => {
+    if (!orders) return [];
+    
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
       
-      data?.forEach(product => {
-        const category = product.category;
-        categoryCount[category] = (categoryCount[category] || 0) + 1;
+      const monthOrders = orders.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate.toISOString().slice(0, 7) === monthKey && 
+               order.payment_status === 'completed';
       });
       
-      // Convert to the format needed by the pie chart
-      const pieData = Object.keys(categoryCount).map(category => ({
-        name: category,
-        value: categoryCount[category]
-      }));
+      const revenue = monthOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
       
-      setCategoryData(pieData.length > 0 ? pieData : [
-        { name: "Women's Fashion", value: 40 },
-        { name: "Men's Wear", value: 30 },
-        { name: "Accessories", value: 20 },
-        { name: "Footwear", value: 10 }
-      ]);
-    } catch (error) {
-      console.error("Error fetching category data:", error);
-      setCategoryData([
-        { name: "Women's Fashion", value: 40 },
-        { name: "Men's Wear", value: 30 },
-        { name: "Accessories", value: 20 },
-        { name: "Footwear", value: 10 }
-      ]);
-    }
-  };
-
-  // Fetch order status distribution
-  const fetchOrderStatusData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('status');
-      
-      if (error) throw error;
-      
-      // Count orders by status
-      const statusCount: Record<string, number> = {};
-      
-      data?.forEach(order => {
-        const status = order.status;
-        statusCount[status] = (statusCount[status] || 0) + 1;
+      months.push({
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        revenue: revenue,
+        orders: monthOrders.length
       });
-      
-      // Convert to the format needed by the chart
-      const chartData = Object.keys(statusCount).map(status => ({
-        status,
-        count: statusCount[status]
-      }));
-      
-      setOrderStatusData(chartData.length > 0 ? chartData : [
-        { status: "Pending", count: 15 },
-        { status: "Processing", count: 8 },
-        { status: "Shipped", count: 10 },
-        { status: "Delivered", count: 30 }
-      ]);
-    } catch (error) {
-      console.error("Error fetching order status data:", error);
-      setOrderStatusData([
-        { status: "Pending", count: 15 },
-        { status: "Processing", count: 8 },
-        { status: "Shipped", count: 10 },
-        { status: "Delivered", count: 30 }
-      ]);
     }
-  };
+    
+    return months;
+  }, [orders]);
 
-  // Fetch product stock data
-  const fetchStockData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('name, stock')
-        .order('stock', { ascending: true })
-        .limit(10);
-      
-      if (error) throw error;
-      
-      setStockData(data?.map(item => ({
-        name: item.name,
-        stock: item.stock || 0
-      })) || []);
-    } catch (error) {
-      console.error("Error fetching stock data:", error);
-      setStockData([]);
-    }
-  };
+  const isLoading = ordersLoading || productsLoading || usersLoading;
 
-  // Rendering the dashboard
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array(4).fill(0).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <div>
-          <h2 className="text-3xl font-bold">Analytics Dashboard</h2>
-          <p className="text-muted-foreground">View your store performance and customer insights</p>
-        </div>
-        <div className="mt-2 sm:mt-0">
-          <Select 
-            value={timeframe} 
-            onValueChange={(value) => setTimeframe(value as 'week' | 'month' | 'year')}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">Last 7 days</SelectItem>
-              <SelectItem value="month">Last 30 days</SelectItem>
-              <SelectItem value="year">Last 12 months</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome to your admin dashboard</p>
       </div>
 
-      {/* Overview Cards */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Total Revenue
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-full" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{formatPrice(overview.totalSales)}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total revenue from all sales
-                </p>
-              </>
-            )}
+            <div className="text-2xl font-bold">{formatPrice(totalRevenue)}</div>
+            <p className="text-xs text-muted-foreground">From completed orders</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4" />
+              Total Orders
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-full" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{overview.totalOrders}</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-500">+{Math.floor(Math.random() * 20) + 1}%</span> from last month
-                </p>
-              </>
-            )}
+            <div className="text-2xl font-bold">{totalOrders}</div>
+            <p className="text-xs text-muted-foreground">{completedOrders} completed</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Products
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-full" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{overview.totalCustomers}</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-500">+{Math.floor(Math.random() * 10) + 1}%</span> from last month
-                </p>
-              </>
-            )}
+            <div className="text-2xl font-bold">{totalProducts}</div>
+            <p className="text-xs text-muted-foreground">Total inventory</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Users
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-full" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{overview.pendingOrders}</div>
-                <p className="text-xs text-muted-foreground">
-                  Orders waiting to be processed
-                </p>
-              </>
-            )}
+            <div className="text-2xl font-bold">{totalUsers}</div>
+            <p className="text-xs text-muted-foreground">Registered customers</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="sales" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3 mb-4">
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="customers">Orders</TabsTrigger>
-        </TabsList>
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue Overview</CardTitle>
+            <CardDescription>Monthly revenue for the last 6 months</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyRevenue}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis tickFormatter={(value) => `KSh ${value / 1000}k`} />
+                  <Tooltip formatter={(value) => [`${formatPrice(value as number)}`, 'Revenue']} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#8884d8" 
+                    strokeWidth={2}
+                    dot={{ fill: '#8884d8' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Sales Tab */}
-        <TabsContent value="sales">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sales Overview</CardTitle>
-                <CardDescription>
-                  Revenue trends over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-2">
-                {isLoading ? (
-                  <div className="h-[300px] flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="mt-2 text-sm text-muted-foreground">Loading chart data...</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={salesData}
-                        margin={{
-                          top: 5,
-                          right: 30,
-                          left: 20,
-                          bottom: 5,
-                        }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="date" 
-                          padding={{ left: 15, right: 15 }}
-                          tick={{ fontSize: 12 }} 
-                        />
-                        <YAxis 
-                          tick={{ fontSize: 12 }} 
-                          tickFormatter={(value) => `$${value}`} 
-                        />
-                        <Tooltip 
-                          formatter={(value) => [formatPrice(value as number), "Sales"]} 
-                          labelFormatter={(label) => `Date: ${label}`}
-                        />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="sales"
-                          stroke="#8884d8"
-                          activeDot={{ r: 8 }}
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+        {/* Order Status Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Status Distribution</CardTitle>
+            <CardDescription>Current order status breakdown</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={orderStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {orderStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Categories</CardTitle>
-                <CardDescription>
-                  Distribution of products by category
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-2">
-                {isLoading ? (
-                  <div className="h-[300px] flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="mt-2 text-sm text-muted-foreground">Loading chart data...</p>
-                    </div>
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Orders */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Orders</CardTitle>
+            <CardDescription>Latest customer orders</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {orders?.slice(0, 5).map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">#{order.id.substring(0, 8)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.profiles?.email || 'Guest'}
+                    </p>
                   </div>
-                ) : (
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {categoryData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => [`${value} products`, "Count"]} />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="text-right">
+                    <p className="font-medium">{formatPrice(order.total_amount)}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{order.status}</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Products Tab */}
-        <TabsContent value="products">
-          <Card>
-            <CardHeader>
-              <CardTitle>Low Stock Products</CardTitle>
-              <CardDescription>Items that need restocking soon</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-8 w-full" />
-                  ))}
                 </div>
-              ) : stockData.length > 0 ? (
-                <div className="h-[350px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={stockData.slice(0, 10)}
-                      layout="vertical"
-                      margin={{
-                        top: 20,
-                        right: 30,
-                        left: 50,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis 
-                        dataKey="name" 
-                        type="category" 
-                        tick={{ fontSize: 12 }}
-                        width={120}
-                        tickFormatter={(value) => 
-                          value.length > 15 ? `${value.substring(0, 15)}...` : value
-                        }
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Low Stock Products */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Low Stock Alert</CardTitle>
+            <CardDescription>Products running low on inventory</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {products?.filter(product => (product.stock || 0) < 10).slice(0, 5).map((product) => (
+                <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {product.image && (
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="h-10 w-10 rounded object-cover"
                       />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="stock" name="Stock Remaining" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                    )}
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-sm text-muted-foreground">{product.category}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-red-600">{product.stock || 0} left</p>
+                    <p className="text-sm text-muted-foreground">{formatPrice(product.price)}</p>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Package className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium">No product data available</h3>
-                  <p className="text-muted-foreground">
-                    Add some products to your inventory to see stock data.
-                  </p>
-                  <Button className="mt-4" asChild>
-                    <a href="/admin/products/add">Add Product</a>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Orders Tab */}
-        <TabsContent value="customers">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Status</CardTitle>
-                <CardDescription>Breakdown of orders by status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-2">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-8 w-full" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={orderStatusData}
-                        margin={{
-                          top: 20,
-                          right: 30,
-                          left: 20,
-                          bottom: 5,
-                        }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="status" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="count" name="Orders" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest customer orders and actions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[200px]" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <ShoppingBag className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">New order placed</p>
-                        <p className="text-xs text-muted-foreground">Order #ORD-2023 for KES 7,500</p>
-                        <p className="text-xs text-muted-foreground">2 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">New customer registered</p>
-                        <p className="text-xs text-muted-foreground">john.doe@example.com</p>
-                        <p className="text-xs text-muted-foreground">5 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Package className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Order status updated</p>
-                        <p className="text-xs text-muted-foreground">Order #ORD-1984 changed to "Shipped"</p>
-                        <p className="text-xs text-muted-foreground">12 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Payment received</p>
-                        <p className="text-xs text-muted-foreground">KES 12,300 via M-Pesa</p>
-                        <p className="text-xs text-muted-foreground">1 day ago</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -20,13 +20,27 @@ export default function ProductPage() {
   const { data: product, isLoading: isLoadingProduct } = useQuery({
     queryKey: ['product', slug],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First try to find by slug
+      let { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('slug', slug)
         .maybeSingle();
 
       if (error) throw error;
+      
+      // If no product found by slug, try to find by ID
+      if (!data && slug) {
+        const { data: dataById, error: errorById } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', slug)
+          .maybeSingle();
+        
+        if (errorById) throw errorById;
+        data = dataById;
+      }
+      
       return data;
     },
     enabled: !!slug,
@@ -45,7 +59,7 @@ export default function ProductPage() {
         .limit(4);
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!product,
   });
@@ -105,49 +119,44 @@ export default function ProductPage() {
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
           <Link to="/shop" className="text-muted-foreground hover:text-foreground">Shop</Link>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <span className="text-foreground">{product.name}</span>
+          <span className="text-foreground">{product?.name || 'Product'}</span>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
           {/* Product images */}
-          <ProductGallery images={product.images?.length ? product.images.map((img: string, i: number) => ({
+          <ProductGallery images={product?.images?.length ? product.images.map((img: string, i: number) => ({
             id: `img-${i}`,
             url: img,
             alt: `${product.name} image ${i+1}`
           })) : [{
             id: 'main',
-            url: product.image,
-            alt: product.name
+            url: product?.image || '/placeholder-image.jpg',
+            alt: product?.name || 'Product image'
           }]} />
           
           {/* Product details */}
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold">{product.name}</h1>
+            <h1 className="text-3xl font-bold">{product?.name}</h1>
             <div className="text-2xl font-semibold text-primary">
-              ${product.price.toFixed(2)}
+              KSh {product?.price?.toLocaleString() || '0'}
             </div>
             
             <div className="text-muted-foreground">
-              {product.description}
+              {product?.description}
             </div>
-            
-            {product.features && (
-              <ul className="list-disc list-inside space-y-1">
-                {product.features.map((feature: string, index: number) => (
-                  <li key={index}>{feature}</li>
-                ))}
-              </ul>
-            )}
             
             <Separator />
             
             <div>
-              <AddToCart productId={product.id} />
+              <AddToCart productId={product?.id || ''} />
             </div>
             
             <div className="pt-4 text-sm text-muted-foreground">
-              <p>SKU: {product.id}</p>
-              <p>Category: {product.category}</p>
+              <p>SKU: {product?.id}</p>
+              <p>Category: {product?.category}</p>
+              {product?.stock !== undefined && (
+                <p>Stock: {product.stock} available</p>
+              )}
             </div>
           </div>
         </div>

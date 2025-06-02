@@ -11,56 +11,37 @@ import {
 import type { EmblaCarouselType } from "embla-carousel";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define the uploaded images to use for the jumbotron if database fetch fails
-const initialSlides = [
+// Fallback slides in case no products are found
+const fallbackSlides = [
   {
     id: 1,
     image: "/lovable-uploads/07c800e0-37c5-4b53-b41a-e4d279546a58.png",
-    title: "African Print Collection",
-    description: "Embrace culture with our vibrant African-inspired designs",
+    title: "Welcome to StarStarz Fashion",
+    description: "Discover our amazing collection of fashion items",
   },
   {
     id: 2,
     image: "/lovable-uploads/a8070a6f-3f4a-4e83-b530-1f35da1e7893.png",
-    title: "Modern Elegance",
-    description: "Contemporary fashion that blends tradition with modern aesthetics",
+    title: "New Arrivals",
+    description: "Check out our latest fashion trends",
   },
-  {
-    id: 3,
-    image: "/lovable-uploads/7f3ddbf3-a8c4-4b91-86a9-f5f1c19e8cff.png",
-    title: "Casual & Stylish",
-    description: "Everyday comfort with our uniquely crafted casual wear",
-  },
-  {
-    id: 4,
-    image: "/lovable-uploads/e6c10f91-afbd-42b1-8571-a219bc4c7ed1.png",
-    title: "Urban Fashion",
-    description: "Stand out with our trendy urban fashion collection",
-  },
-  {
-    id: 5,
-    image: "/lovable-uploads/b4662353-e7aa-4599-90c9-cc585cd97dea.png",
-    title: "Vibrant Collection",
-    description: "Bold and beautiful styles for the fashion-forward",
-  }
 ];
 
 export function JumbotronSlider() {
   const [api, setApi] = useState<EmblaCarouselType | null>(null);
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [slides, setSlides] = useState(initialSlides);
+  const [slides, setSlides] = useState(fallbackSlides);
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch product images from the database
+  // Fetch featured products from the database
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
-        // First try to get featured products from database
         const { data: productsData, error } = await supabase
           .from('products')
           .select('id, name, description, image')
-          .filter('is_featured', 'eq', true)
+          .eq('is_featured', true)
           .limit(5);
 
         if (error) {
@@ -71,11 +52,32 @@ export function JumbotronSlider() {
         if (productsData && productsData.length > 0) {
           const productSlides = productsData.map((product, index) => ({
             id: index + 1,
-            image: product.image || initialSlides[index % initialSlides.length].image,
-            title: product.name || initialSlides[index % initialSlides.length].title,
-            description: product.description || initialSlides[index % initialSlides.length].description,
+            image: product.image || fallbackSlides[index % fallbackSlides.length].image,
+            title: product.name || `Featured Product ${index + 1}`,
+            description: product.description || "Discover this amazing product from our collection",
           }));
           setSlides(productSlides);
+        } else {
+          // If no featured products, fetch any products
+          const { data: anyProducts, error: anyError } = await supabase
+            .from('products')
+            .select('id, name, description, image')
+            .limit(5);
+          
+          if (anyError) {
+            console.error("Error fetching any products:", anyError);
+            return;
+          }
+          
+          if (anyProducts && anyProducts.length > 0) {
+            const productSlides = anyProducts.map((product, index) => ({
+              id: index + 1,
+              image: product.image || fallbackSlides[index % fallbackSlides.length].image,
+              title: product.name || `Product ${index + 1}`,
+              description: product.description || "Discover this amazing product from our collection",
+            }));
+            setSlides(productSlides);
+          }
         }
       } catch (error) {
         console.error("Error in fetching featured products:", error);
@@ -99,10 +101,10 @@ export function JumbotronSlider() {
       if (api) {
         setIsTransitioning(true);
         api.scrollNext();
-        setTimeout(() => setIsTransitioning(false), 500); // Reduced from 800ms to 500ms for faster transition
+        setTimeout(() => setIsTransitioning(false), 500);
       }
       resetAutoplay();
-    }, 4000); // 4 seconds per slide
+    }, 4000);
   }, [api]);
 
   const stopAutoplay = useCallback(() => {

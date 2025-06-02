@@ -35,6 +35,7 @@ import AdminCustomers from "@/pages/admin/AdminCustomers";
 import AdminPayments from "@/pages/admin/AdminPayments";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminLogin from "@/pages/admin/AdminLogin";
+import AdminImages from "@/pages/admin/AdminImages";
 import SupabaseSetupGuide from "@/pages/admin/SupabaseSetupGuide";
 import "@/App.css";
 
@@ -104,10 +105,6 @@ const router = createBrowserRouter([
     path: "/order/success",
     element: <OrderSuccessPage />,
   },
-  // {
-  //   path: "/order/confirmation/:id",
-  //   element: <OrderConfirmationPage />,
-  // },
   {
     path: "/order/:id",
     element: <OrderDetailPage />,
@@ -138,6 +135,10 @@ const router = createBrowserRouter([
   },
   {
     path: "/admin",
+    element: <AdminDashboard />,
+  },
+  {
+    path: "/admin/dashboard",
     element: <AdminDashboard />,
   },
   {
@@ -173,6 +174,10 @@ const router = createBrowserRouter([
     element: <AdminSettings />,
   },
   {
+    path: "/admin/images",
+    element: <AdminImages />,
+  },
+  {
     path: "/admin/login",
     element: <AdminLogin />,
   },
@@ -181,17 +186,9 @@ const router = createBrowserRouter([
     element: <SupabaseSetupGuide />,
   },
   {
-  path: "/admin/dashboard",
-  element: <AdminDashboard />,
+    path: "/order-confirmation",
+    element: <OrderConfirmationPage />,
   },
-  {
-  path: "/order-confirmation",
-  element: <OrderConfirmationPage />,
-  },
-  // {
-  // path: "/order/confirmation/:id",
-  // element: <OrderConfirmationPage />,
-  // },
   {
     path: "*",
     element: <NotFoundPage />,

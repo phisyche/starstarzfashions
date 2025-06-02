@@ -11,7 +11,8 @@ import {
   ChevronDown,
   Users,
   CreditCard,
-  Menu
+  Menu,
+  Image
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -168,6 +169,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       title: 'Payments',
       icon: CreditCard,
       path: '/admin/payments',
+      disabled: false
+    },
+    {
+      title: 'Images',
+      icon: Image,
+      path: '/admin/images',
       disabled: false
     },
     {
