@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +10,7 @@ import {
 import type { EmblaCarouselType } from "embla-carousel";
 import { supabase } from "@/integrations/supabase/client";
 
-// Fallback slides in case no products are found
+// Fallback slides in case no site images are found
 const fallbackSlides = [
   {
     id: 1,
@@ -34,57 +33,37 @@ export function JumbotronSlider() {
   const [slides, setSlides] = useState(fallbackSlides);
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch featured products from the database
+  // Fetch slider images from the site_images table
   useEffect(() => {
-    const fetchFeaturedProducts = async () => {
+    const fetchSliderImages = async () => {
       try {
-        const { data: productsData, error } = await supabase
-          .from('products')
-          .select('id, name, description, image')
-          .eq('is_featured', true)
-          .limit(5);
+        const { data: sliderImages, error } = await supabase
+          .from('site_images')
+          .select('*')
+          .eq('category', 'slider')
+          .eq('is_active', true)
+          .order('order_index');
 
         if (error) {
-          console.error("Error fetching featured products:", error);
+          console.error("Error fetching slider images:", error);
           return;
         }
 
-        if (productsData && productsData.length > 0) {
-          const productSlides = productsData.map((product, index) => ({
-            id: index + 1,
-            image: product.image || fallbackSlides[index % fallbackSlides.length].image,
-            title: product.name || `Featured Product ${index + 1}`,
-            description: product.description || "Discover this amazing product from our collection",
+        if (sliderImages && sliderImages.length > 0) {
+          const imageSlides = sliderImages.map((image) => ({
+            id: image.order_index,
+            image: image.url,
+            title: image.title,
+            description: image.description || "Discover amazing fashion from our collection",
           }));
-          setSlides(productSlides);
-        } else {
-          // If no featured products, fetch any products
-          const { data: anyProducts, error: anyError } = await supabase
-            .from('products')
-            .select('id, name, description, image')
-            .limit(5);
-          
-          if (anyError) {
-            console.error("Error fetching any products:", anyError);
-            return;
-          }
-          
-          if (anyProducts && anyProducts.length > 0) {
-            const productSlides = anyProducts.map((product, index) => ({
-              id: index + 1,
-              image: product.image || fallbackSlides[index % fallbackSlides.length].image,
-              title: product.name || `Product ${index + 1}`,
-              description: product.description || "Discover this amazing product from our collection",
-            }));
-            setSlides(productSlides);
-          }
+          setSlides(imageSlides);
         }
       } catch (error) {
-        console.error("Error in fetching featured products:", error);
+        console.error("Error in fetching slider images:", error);
       }
     };
 
-    fetchFeaturedProducts();
+    fetchSliderImages();
   }, []);
 
   const onSelect = useCallback(() => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
@@ -8,30 +7,17 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { useSupabase } from '@/context/SupabaseContext';
 import { generateOrderId } from '@/lib/utils';
 import { initiateMpesaPayment } from '@/services/mpesa';
+import { initiateStripePayment } from '@/services/stripe';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { products } from "@/data/products";
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertCircle, CheckCircle2, Loader2, CreditCard, Smartphone } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function CheckoutPage() {
@@ -171,11 +157,9 @@ export default function CheckoutPage() {
     setPaymentStatus('processing');
     
     try {
-      // Generate a unique order ID
       const newOrderId = generateOrderId();
       setOrderId(newOrderId);
       
-      // Create the order in the database
       const orderData = {
         id: newOrderId,
         user_id: user.id,
@@ -195,7 +179,6 @@ export default function CheckoutPage() {
         created_at: new Date().toISOString(),
       };
       
-      // Create order in database
       const { error: orderError } = await supabase
         .from('orders')
         .insert(orderData);
@@ -204,7 +187,6 @@ export default function CheckoutPage() {
         throw new Error('Failed to create order: ' + orderError.message);
       }
       
-      // Create order items
       const orderItems = cartItems.map(item => ({
         order_id: newOrderId,
         product_id: item.productId,
@@ -223,9 +205,7 @@ export default function CheckoutPage() {
         throw new Error('Failed to create order items: ' + orderItemsError.message);
       }
       
-      // Process payment based on selected method
       if (formData.paymentMethod === 'mpesa') {
-        // Initiate M-Pesa STK Push
         const mpesaResponse = await initiateMpesaPayment({
           phone: formData.phone,
           amount: calculateTotal(),
@@ -238,40 +218,35 @@ export default function CheckoutPage() {
             description: "Please check your phone and enter your M-Pesa PIN to complete the payment.",
           });
           
-          // Clear cart and redirect to order confirmation page
           clearCart();
           navigate(`/order-confirmation?orderId=${newOrderId}`);
         } else {
           setPaymentStatus('error');
           setPaymentError(mpesaResponse.error || 'Failed to initiate M-Pesa payment');
-          toast({
-            title: "Payment failed",
-            description: mpesaResponse.error || 'Failed to initiate M-Pesa payment. Please try again.',
-            variant: "destructive",
-          });
         }
-      } else if (formData.paymentMethod === 'card') {
-        // For now, we'll simulate a successful card payment
-        // In a real-world scenario, you would integrate with a card payment provider
-        setTimeout(() => {
-          // Update order status
-          supabase
-            .from('orders')
-            .update({
-              payment_status: 'paid',
-              status: 'processing',
-            })
-            .eq('id', newOrderId);
-            
-          // Clear cart and redirect to order confirmation page
-          clearCart();
-          setPaymentStatus('success');
+      } else if (formData.paymentMethod === 'stripe') {
+        const stripeResponse = await initiateStripePayment({
+          amount: calculateTotal(),
+          orderId: newOrderId,
+          customerEmail: formData.email,
+          customerName: `${formData.firstName} ${formData.lastName}`,
+        });
+        
+        if (stripeResponse.success && stripeResponse.sessionUrl) {
+          // Open Stripe checkout in a new tab
+          window.open(stripeResponse.sessionUrl, '_blank');
+          
           toast({
-            title: "Payment successful",
-            description: "Thank you for your order! You will receive an email with the details.",
+            title: "Redirecting to payment",
+            description: "Complete your payment in the new tab that opened.",
           });
+          
+          clearCart();
           navigate(`/order-confirmation?orderId=${newOrderId}`);
-        }, 2000);
+        } else {
+          setPaymentStatus('error');
+          setPaymentError(stripeResponse.error || 'Failed to initiate Stripe payment');
+        }
       }
     } catch (error) {
       console.error("Error during checkout:", error);
@@ -328,304 +303,254 @@ export default function CheckoutPage() {
   return (
     <MainLayout>
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-4">Checkout</h1>
-        <p className="text-gray-500 mb-8">
-          Please review your order and enter your details below.
-        </p>
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold mb-2">Checkout</h1>
+          <p className="text-gray-500 mb-8">
+            Review your order and complete your purchase
+          </p>
 
-        {paymentStatus === 'processing' && (
-          <Alert className="mb-6 bg-blue-50 border-blue-200">
-            <Loader2 className="h-4 w-4 animate-spin text-blue-500 mr-2" />
-            <AlertTitle>Processing payment</AlertTitle>
-            <AlertDescription>
-              Please do not close this page. We are processing your payment.
-              {formData.paymentMethod === 'mpesa' && " Check your phone for the M-Pesa PIN prompt."}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {paymentStatus === 'error' && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Payment failed</AlertTitle>
-            <AlertDescription>
-              {paymentError || "There was a problem processing your payment. Please try again."}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {paymentStatus === 'success' && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <AlertTitle>Payment successful</AlertTitle>
-            <AlertDescription>
-              Thank you for your order! You will be redirected to the confirmation page.
-            </AlertDescription>
-          </Alert>
-        )}
+          {paymentStatus === 'processing' && (
+            <Alert className="mb-6 bg-blue-50 border-blue-200">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-500 mr-2" />
+              <AlertTitle>Processing payment</AlertTitle>
+              <AlertDescription>
+                Please do not close this page. We are processing your payment.
+                {formData.paymentMethod === 'mpesa' && " Check your phone for the M-Pesa PIN prompt."}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {paymentStatus === 'error' && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Payment failed</AlertTitle>
+              <AlertDescription>
+                {paymentError || "There was a problem processing your payment. Please try again."}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {paymentStatus === 'success' && (
+            <Alert className="mb-6 bg-green-50 border-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <AlertTitle>Payment successful</AlertTitle>
+              <AlertDescription>
+                Thank you for your order! You will be redirected to the confirmation page.
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Order Summary */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            <Card className="mb-4">
-              <CardContent className="p-4">
-                <Table>
-                  <TableCaption>Your order items</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">Image</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cartItems.map((item) => {
-                      const product = products.find(p => p.id === item.productId);
-                      if (!product) return null;
-
-                      return (
-                        <TableRow key={item.productId}>
-                          <TableCell className="font-medium">
-                            <div className="w-16 h-16 rounded overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Order Summary */}
+            <div className="order-2 lg:order-1">
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead className="text-center">Qty</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cartItems.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
                               <img
-                                src={product.image}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
+                                src={item.image}
+                                alt={item.name}
+                                className="w-12 h-12 rounded object-cover"
                               />
+                              <div>
+                                <p className="font-medium">{item.name}</p>
+                                {item.size && item.color && (
+                                  <p className="text-sm text-gray-500">
+                                    {item.size} • {item.color}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
                           <TableCell className="text-right">
-                            KES {(product.price * item.quantity).toLocaleString()}
+                            KES {(item.price * item.quantity).toLocaleString()}
                           </TableCell>
                         </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={3}>Total</TableCell>
-                      <TableCell className="text-right">
-                        KES {calculateTotal().toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
-              </CardContent>
-            </Card>
+                      ))}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={2} className="font-semibold">Total</TableCell>
+                        <TableCell className="text-right font-semibold">
+                          KES {calculateTotal().toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Accordion type="single" collapsible>
-              <AccordionItem value="payment">
-                <AccordionTrigger className="text-xl font-semibold">Payment Method</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="mpesa"
-                        checked={formData.paymentMethod === 'mpesa'}
-                        onCheckedChange={() => handlePaymentMethodChange('mpesa')}
-                      />
-                      <label
-                        htmlFor="mpesa"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        M-Pesa (Mobile Money)
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="card"
-                        checked={formData.paymentMethod === 'card'}
-                        onCheckedChange={() => handlePaymentMethodChange('card')}
-                      />
-                      <label
-                        htmlFor="card"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Visa / MasterCard
-                      </label>
-                    </div>
-                    
-                    {formData.paymentMethod === 'mpesa' && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-md text-sm">
-                        <p className="font-medium mb-2">M-Pesa Payment Information:</p>
-                        <ul className="list-disc pl-4 space-y-1 text-gray-600">
-                          <li>Enter your phone number in the form</li>
-                          <li>You'll receive a payment prompt on your phone</li>
-                          <li>Enter your M-PESA PIN to complete the payment</li>
-                          <li>The payment will be processed to PayBill: 4108307</li>
-                        </ul>
+            {/* Checkout Form */}
+            <div className="order-1 lg:order-2">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Payment Method */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
+                    <RadioGroup
+                      value={formData.paymentMethod}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value }))}
+                    >
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <RadioGroupItem value="mpesa" id="mpesa" />
+                        <Label htmlFor="mpesa" className="flex items-center space-x-2 flex-1 cursor-pointer">
+                          <Smartphone className="h-5 w-5 text-green-600" />
+                          <span>M-Pesa Mobile Money</span>
+                        </Label>
                       </div>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
+                      
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <RadioGroupItem value="stripe" id="stripe" />
+                        <Label htmlFor="stripe" className="flex items-center space-x-2 flex-1 cursor-pointer">
+                          <CreditCard className="h-5 w-5 text-blue-600" />
+                          <span>Credit/Debit Card (Visa, Mastercard)</span>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </CardContent>
+                </Card>
 
-          {/* Shipping Information */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                    First Name
-                  </label>
-                  <Input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                    Last Name
-                  </label>
-                  <Input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address
-                </label>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Phone Number {formData.paymentMethod === 'mpesa' && <span className="text-red-500">*</span>}
-                </label>
-                <Input
-                  type="text"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g. 0712345678"
-                  className="mt-1"
-                />
-                {formData.paymentMethod === 'mpesa' && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    This number will receive the M-Pesa payment request
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                  Address
-                </label>
-                <Input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                  className="mt-1"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                    City
-                  </label>
-                  <Input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    required
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
-                    Postal Code
-                  </label>
-                  <Input
-                    type="text"
-                    id="postalCode"
-                    name="postalCode"
-                    value={formData.postalCode}
-                    onChange={handleChange}
-                    required
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                  Country
-                </label>
-                <Input
-                  type="text"
-                  id="country"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  required
-                  className="mt-1"
-                />
-              </div>
+                {/* Shipping Information */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Shipping Information</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName">First Name *</Label>
+                          <Input
+                            id="firstName"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName">Last Name *</Label>
+                          <Input
+                            id="lastName"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                            required
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="email">Email Address *</Label>
+                        <Input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="phone">Phone Number *</Label>
+                        <Input
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="0712345678"
+                          required
+                        />
+                        {formData.paymentMethod === 'mpesa' && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            This number will receive the M-Pesa payment request
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="address">Address *</Label>
+                        <Input
+                          id="address"
+                          name="address"
+                          value={formData.address}
+                          onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="city">City *</Label>
+                          <Input
+                            id="city"
+                            name="city"
+                            value={formData.city}
+                            onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="postalCode">Postal Code *</Label>
+                          <Input
+                            id="postalCode"
+                            name="postalCode"
+                            value={formData.postalCode}
+                            onChange={(e) => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              <Separator className="my-4" />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={formData.terms}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, terms: checked as boolean }))}
+                  />
+                  <Label htmlFor="terms" className="text-sm">
+                    I agree to the <a href="/terms" className="text-blue-500 underline">Terms and Conditions</a>
+                  </Label>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={formData.terms}
-                  onCheckedChange={handleCheckboxChange}
-                />
-                <label
-                  htmlFor="terms"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !formData.terms}
+                  className="w-full py-3"
+                  size="lg"
                 >
-                  I agree to the <a href="/terms" className="text-blue-500 underline">terms and conditions</a>
-                </label>
-              </div>
-
-              <Button disabled={isSubmitting} type="submit" className="w-full">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Confirm Order'
-                )}
-              </Button>
-            </form>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {formData.paymentMethod === 'mpesa' && <Smartphone className="mr-2 h-4 w-4" />}
+                      {formData.paymentMethod === 'stripe' && <CreditCard className="mr-2 h-4 w-4" />}
+                      Complete Order - KES {calculateTotal().toLocaleString()}
+                    </>
+                  )}
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

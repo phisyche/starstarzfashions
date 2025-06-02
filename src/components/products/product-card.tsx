@@ -21,6 +21,11 @@ export interface ProductType {
   isFeatured?: boolean;
   isBestSeller?: boolean;
   slug: string;
+  colors?: string[];
+  sizes?: string[];
+  discount_percent?: number;
+  is_sale?: boolean;
+  is_new?: boolean;
 }
 
 export interface ProductCardProps {
@@ -34,30 +39,28 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
   
-  const discountPercentage = product.originalPrice 
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
-    : 0;
+  const discountPercentage = product.discount_percent || 0;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Prevent multiple rapid clicks
+    if (isAdding) return;
     
     setIsAdding(true);
     
     try {
-      // Process the image path
       const processedImage = getImagePath(product.image);
       
-      // Create product object
       const productToAdd = {
         name: product.name,
         price: product.price,
         image: processedImage,
-        size: 'M', // Default size
-        color: 'Default', // Default color
+        size: product.sizes?.[0] || 'One Size',
+        color: product.colors?.[0] || 'Default',
       };
       
-      // Add to cart
       addItem(product.id, 1, productToAdd);
       
       toast({
@@ -65,9 +68,10 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
         description: `${product.name} added to your cart`,
       });
       
+      // Reset the adding state after a brief delay
       setTimeout(() => {
         setIsAdding(false);
-      }, 500);
+      }, 1000);
       
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -174,12 +178,12 @@ export function ProductCard({ product, layout = 'grid' }: ProductCardProps) {
             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute top-0 left-0 w-full p-2 flex flex-wrap gap-1">
-            {product.isNew && (
+            {product.is_new && (
               <Badge className="bg-theme-pink text-white">
                 New
               </Badge>
             )}
-            {product.originalPrice && (
+            {product.is_sale && discountPercentage > 0 && (
               <Badge variant="outline" className="bg-theme-blue text-white">
                 {discountPercentage}% OFF
               </Badge>

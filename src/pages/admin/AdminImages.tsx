@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Image, Upload, Trash2, Save } from 'lucide-react';
+import { ImageUpload } from '@/components/products/image-upload';
+import { Image, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface SiteImage {
@@ -26,7 +27,6 @@ export default function AdminImages() {
   const { toast } = useToast();
   const [images, setImages] = useState<SiteImage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchImages();
@@ -36,30 +36,16 @@ export default function AdminImages() {
     try {
       setLoading(true);
       
-      // For now, we'll create mock data since the table doesn't exist yet
-      // In a real implementation, you would fetch from the database
-      const mockImages: SiteImage[] = [
-        {
-          id: '1',
-          category: 'slider',
-          url: '/lovable-uploads/42efd527-3543-499c-ae64-527c63001e6c.png',
-          title: 'Hero Slider 1',
-          description: 'Main promotional banner',
-          order_index: 1,
-          is_active: true
-        },
-        {
-          id: '2',
-          category: 'category',
-          url: '/lovable-uploads/5360e524-225a-4ce2-b602-18862793b0f3.png',
-          title: 'Category: Dresses',
-          description: 'Shop by category image',
-          order_index: 1,
-          is_active: true
-        }
-      ];
+      const { data, error } = await supabase
+        .from('site_images')
+        .select('*')
+        .order('category, order_index');
       
-      setImages(mockImages);
+      if (error) {
+        throw error;
+      }
+      
+      setImages(data || []);
     } catch (error: any) {
       console.error('Error fetching images:', error);
       toast({
@@ -72,61 +58,58 @@ export default function AdminImages() {
     }
   }
 
-  async function handleFileUpload(file: File, category: string) {
+  async function handleImageAdd(category: string, imageUrl: string) {
     try {
-      setUploading(true);
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${category}-${Date.now()}.${fileExt}`;
-      const filePath = `site-images/${fileName}`;
+      const maxOrder = Math.max(
+        0,
+        ...images
+          .filter(img => img.category === category)
+          .map(img => img.order_index)
+      );
 
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-      // Here you would normally insert into a site_images table
-      // For now, we'll just add to the local state
-      const newImage: SiteImage = {
-        id: Date.now().toString(),
+      const newImage = {
         category: category as 'slider' | 'category' | 'banner',
-        url: publicUrl,
+        url: imageUrl,
         title: `New ${category} image`,
         description: '',
-        order_index: images.filter(img => img.category === category).length + 1,
-        is_active: true
+        order_index: maxOrder + 1,
+        is_active: true,
       };
 
-      setImages(prev => [...prev, newImage]);
+      const { data, error } = await supabase
+        .from('site_images')
+        .insert([newImage])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setImages(prev => [...prev, data]);
 
       toast({
-        title: "Image uploaded successfully",
+        title: "Image added successfully",
         description: "The image has been added to your site",
       });
 
     } catch (error: any) {
-      console.error('Error uploading image:', error);
+      console.error('Error adding image:', error);
       toast({
-        title: "Upload failed",
+        title: "Failed to add image",
         description: error.message || "Please try again",
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
     }
   }
 
   async function handleDeleteImage(imageId: string) {
     try {
-      // Here you would normally delete from the database
-      // For now, we'll just remove from local state
+      const { error } = await supabase
+        .from('site_images')
+        .delete()
+        .eq('id', imageId);
+
+      if (error) throw error;
+      
       setImages(prev => prev.filter(img => img.id !== imageId));
       
       toast({
@@ -145,8 +128,13 @@ export default function AdminImages() {
 
   async function handleUpdateImage(imageId: string, updates: Partial<SiteImage>) {
     try {
-      // Here you would normally update the database
-      // For now, we'll just update local state
+      const { error } = await supabase
+        .from('site_images')
+        .update(updates)
+        .eq('id', imageId);
+
+      if (error) throw error;
+      
       setImages(prev => prev.map(img => 
         img.id === imageId ? { ...img, ...updates } : img
       ));
@@ -172,29 +160,18 @@ export default function AdminImages() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">{title}</h3>
-          <div>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleFileUpload(file, category);
-                }
-              }}
-              className="hidden"
-              id={`upload-${category}`}
-            />
-            <Button asChild disabled={uploading}>
-              <Label htmlFor={`upload-${category}`} className="cursor-pointer">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Image
-              </Label>
-            </Button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="border-dashed">
+            <CardContent className="p-6">
+              <ImageUpload
+                onImageUploaded={(url) => handleImageAdd(category, url)}
+                label={`Add ${category} image`}
+              />
+            </CardContent>
+          </Card>
+
           {categoryImages.map((image) => (
             <Card key={image.id}>
               <CardContent className="p-4">
@@ -243,16 +220,6 @@ export default function AdminImages() {
               </CardContent>
             </Card>
           ))}
-          
-          {categoryImages.length === 0 && (
-            <Card className="border-dashed">
-              <CardContent className="p-8 text-center">
-                <Image className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">No images uploaded yet</p>
-                <p className="text-sm text-gray-400">Upload your first {category} image</p>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     );
