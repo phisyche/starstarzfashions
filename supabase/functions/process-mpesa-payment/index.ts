@@ -12,7 +12,8 @@ const corsHeaders = {
 const MPESA_CONSUMER_KEY = Deno.env.get('MPESA_CONSUMER_KEY') || 'Ex1GGMwlnNsqUxH6P7WjmGp0TCTl0Gktr0JoZBvS3UVuS4Rq';
 const MPESA_CONSUMER_SECRET = Deno.env.get('MPESA_CONSUMER_SECRET') || 'XCYRuoHDEWBjfrmdafyOGGQsp2qla2vhyn3BwdqNik6nnobvtf9BTGaFAVbRpq0a';
 const MPESA_PASSKEY = Deno.env.get('MPESA_PASSKEY') || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
-const MPESA_SHORTCODE = '174379'; // Sandbox test shortcode
+// const MPESA_SHORTCODE = '174379'; // Sandbox test shortcode
+const MPESA_SHORTCODE = '4108307'; // Sandbox test shortcode
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || 'https://pifzapdqhaxgskypadws.supabase.co';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZnphcGRxaGF4Z3NreXBhZHdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3OTQ2NjIsImV4cCI6MjA2MTM3MDY2Mn0.CPcFj62zuDGbTJNjsGgA7NK2YAACDDlieKCL_QFDg8M';
 
