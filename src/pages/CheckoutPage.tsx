@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Spinner } from "@/components/ui/spinner";
 import { useSupabase } from '@/context/SupabaseContext';
 import { generateOrderId } from '@/lib/utils';
 import { initiateMpesaPayment } from '@/services/mpesa';
@@ -44,7 +44,6 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    // Redirect to login if not authenticated
     if (!user) {
       toast({
         title: "Authentication required",
@@ -59,7 +58,6 @@ export default function CheckoutPage() {
       navigate('/cart');
     }
     
-    // Pre-fill user data if available
     if (user) {
       const fetchUserProfile = async () => {
         try {
@@ -96,28 +94,6 @@ export default function CheckoutPage() {
     }
   }, [cartItems, navigate, user, toast]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      terms: checked
-    }));
-  };
-
-  const handlePaymentMethodChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      paymentMethod: value
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -140,7 +116,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Validate phone number for M-Pesa
     if (formData.paymentMethod === 'mpesa') {
       const phoneRegex = /^(?:254|\+254|0)?[17][0-9]{8}$/;
       if (!phoneRegex.test(formData.phone)) {
@@ -155,6 +130,7 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     setPaymentStatus('processing');
+    setPaymentError(null);
     
     try {
       const newOrderId = generateOrderId();
@@ -213,6 +189,7 @@ export default function CheckoutPage() {
         });
         
         if (mpesaResponse.success) {
+          setPaymentStatus('success');
           toast({
             title: "M-Pesa payment initiated",
             description: "Please check your phone and enter your M-Pesa PIN to complete the payment.",
@@ -233,13 +210,15 @@ export default function CheckoutPage() {
         });
         
         if (stripeResponse.success && stripeResponse.sessionUrl) {
-          // Open Stripe checkout in a new tab
-          window.open(stripeResponse.sessionUrl, '_blank');
+          setPaymentStatus('success');
           
           toast({
             title: "Redirecting to payment",
-            description: "Complete your payment in the new tab that opened.",
+            description: "Complete your payment in the new tab that will open.",
           });
+          
+          // Open Stripe checkout in a new tab
+          window.open(stripeResponse.sessionUrl, '_blank');
           
           clearCart();
           navigate(`/order-confirmation?orderId=${newOrderId}`);
@@ -326,16 +305,6 @@ export default function CheckoutPage() {
               <AlertTitle>Payment failed</AlertTitle>
               <AlertDescription>
                 {paymentError || "There was a problem processing your payment. Please try again."}
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {paymentStatus === 'success' && (
-            <Alert className="mb-6 bg-green-50 border-green-200">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <AlertTitle>Payment successful</AlertTitle>
-              <AlertDescription>
-                Thank you for your order! You will be redirected to the confirmation page.
               </AlertDescription>
             </Alert>
           )}
