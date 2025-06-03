@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { Check, Package, ShoppingBag, Truck, AlertCircle, Loader2 } from "lucide-react";
+import { Check, Package, ShoppingBag, Truck, AlertCircle, Loader2, MapPin } from 'lucide-react';
 import { useSupabase } from '@/context/SupabaseContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Spinner } from "@/components/ui/spinner";
@@ -53,11 +53,9 @@ export default function OrderConfirmationPage() {
         
         setOrder(data);
         
-        // Check payment status for M-Pesa payments
         if (data.payment_method === 'mpesa' && data.payment_status === 'pending') {
           setCheckingPayment(true);
           
-          // Get the M-Pesa transaction for this order
           const { data: txnData, error: txnError } = await supabase
             .from('mpesa_transactions')
             .select('checkout_request_id')
@@ -65,11 +63,9 @@ export default function OrderConfirmationPage() {
             .single();
             
           if (!txnError && txnData?.checkout_request_id) {
-            // Start polling for payment status
             const checkoutRequestId = txnData.checkout_request_id;
             const checkPaymentInterval = setInterval(async () => {
               try {
-                // First check direct from DB
                 const { data: updatedOrder } = await supabase
                   .from('orders')
                   .select('payment_status')
@@ -83,7 +79,6 @@ export default function OrderConfirmationPage() {
                   return;
                 }
                 
-                // Then check transaction status service
                 const statusResult = await checkMpesaTransactionStatus(checkoutRequestId);
                 if (statusResult.paid) {
                   clearInterval(checkPaymentInterval);
@@ -93,7 +88,7 @@ export default function OrderConfirmationPage() {
               } catch (checkError) {
                 console.error('Error checking payment status:', checkError);
               }
-            }, 5000); // Check every 5 seconds
+            }, 5000);
             
             return () => {
               clearInterval(checkPaymentInterval);
@@ -265,6 +260,14 @@ export default function OrderConfirmationPage() {
                 View Order Details
               </Link>
             </Button>
+            {order.payment_status === 'paid' && (
+              <Button asChild variant="outline">
+                <Link to={`/tracking/${order.id}`}>
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Track Order
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>

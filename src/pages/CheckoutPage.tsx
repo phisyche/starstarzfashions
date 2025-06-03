@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
@@ -15,10 +14,12 @@ import { useSupabase } from '@/context/SupabaseContext';
 import { generateOrderId } from '@/lib/utils';
 import { initiateMpesaPayment } from '@/services/mpesa';
 import { initiateStripePayment } from '@/services/stripe';
+import { initiateCardPayment } from '@/services/cardPayment';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertCircle, CheckCircle2, Loader2, CreditCard, Smartphone } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { CreditCardForm, CreditCardData } from '@/components/checkout/CreditCardForm';
 
 export default function CheckoutPage() {
   const { items: cartItems, clearCart, calculateTotal } = useCart();
@@ -30,6 +31,7 @@ export default function CheckoutPage() {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string>('');
+  const [cardData, setCardData] = useState<CreditCardData | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -94,6 +96,10 @@ export default function CheckoutPage() {
     }
   }, [cartItems, navigate, user, toast]);
 
+  const handleCreditCardSubmit = (creditCardData: CreditCardData) => {
+    setCardData(creditCardData);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -126,6 +132,15 @@ export default function CheckoutPage() {
         });
         return;
       }
+    }
+
+    if (formData.paymentMethod === 'card' && !cardData) {
+      toast({
+        title: "Card details required",
+        description: "Please fill in your credit card details.",
+        variant: "destructive",
+      });
+      return;
     }
 
     setIsSubmitting(true);
@@ -217,7 +232,6 @@ export default function CheckoutPage() {
             description: "Complete your payment in the new tab that will open.",
           });
           
-          // Open Stripe checkout in a new tab
           window.open(stripeResponse.sessionUrl, '_blank');
           
           clearCart();
@@ -225,6 +239,28 @@ export default function CheckoutPage() {
         } else {
           setPaymentStatus('error');
           setPaymentError(stripeResponse.error || 'Failed to initiate Stripe payment');
+        }
+      } else if (formData.paymentMethod === 'card' && cardData) {
+        const cardResponse = await initiateCardPayment({
+          amount: calculateTotal(),
+          orderId: newOrderId,
+          customerEmail: formData.email,
+          customerName: `${formData.firstName} ${formData.lastName}`,
+          cardData: cardData,
+        });
+        
+        if (cardResponse.success) {
+          setPaymentStatus('success');
+          toast({
+            title: "Payment processed successfully",
+            description: "Your order has been confirmed and you will receive a confirmation email.",
+          });
+          
+          clearCart();
+          navigate(`/order-confirmation?orderId=${newOrderId}`);
+        } else {
+          setPaymentStatus('error');
+          setPaymentError(cardResponse.error || 'Failed to process card payment');
         }
       }
     } catch (error) {
@@ -295,6 +331,7 @@ export default function CheckoutPage() {
               <AlertDescription>
                 Please do not close this page. We are processing your payment.
                 {formData.paymentMethod === 'mpesa' && " Check your phone for the M-Pesa PIN prompt."}
+                {formData.paymentMethod === 'card' && " Your card is being processed."}
               </AlertDescription>
             </Alert>
           )}
@@ -383,15 +420,33 @@ export default function CheckoutPage() {
                       </div>
                       
                       <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                        <RadioGroupItem value="stripe" id="stripe" />
-                        <Label htmlFor="stripe" className="flex items-center space-x-2 flex-1 cursor-pointer">
+                        <RadioGroupItem value="card" id="card" />
+                        <Label htmlFor="card" className="flex items-center space-x-2 flex-1 cursor-pointer">
                           <CreditCard className="h-5 w-5 text-blue-600" />
                           <span>Credit/Debit Card (Visa, Mastercard)</span>
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <RadioGroupItem value="stripe" id="stripe" />
+                        <Label htmlFor="stripe" className="flex items-center space-x-2 flex-1 cursor-pointer">
+                          <CreditCard className="h-5 w-5 text-purple-600" />
+                          <span>Stripe Checkout</span>
                         </Label>
                       </div>
                     </RadioGroup>
                   </CardContent>
                 </Card>
+
+                {/* Credit Card Form */}
+                {formData.paymentMethod === 'card' && (
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold mb-4">Credit Card Details</h3>
+                      <CreditCardForm onSubmit={handleCreditCardSubmit} />
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Shipping Information */}
                 <Card>
@@ -513,7 +568,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       {formData.paymentMethod === 'mpesa' && <Smartphone className="mr-2 h-4 w-4" />}
-                      {formData.paymentMethod === 'stripe' && <CreditCard className="mr-2 h-4 w-4" />}
+                      {(formData.paymentMethod === 'stripe' || formData.paymentMethod === 'card') && <CreditCard className="mr-2 h-4 w-4" />}
                       Complete Order - KES {calculateTotal().toLocaleString()}
                     </>
                   )}
