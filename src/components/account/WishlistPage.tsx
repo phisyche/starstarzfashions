@@ -10,11 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 
 export function WishlistPage() {
   const { favorites, loading, removeFromFavorites } = useFavorites();
-  const { addToCart } = useCart();
+  const { addItem } = useCart();
   const { toast } = useToast();
 
   const handleAddToCart = (item: any) => {
-    addToCart({
+    addItem({
       id: item.productId || item.product_id,
       name: item.name || item.product_name,
       price: item.price,

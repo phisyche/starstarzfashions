@@ -46,6 +46,8 @@ export default function CollectionDetailPage() {
         .eq('collection_id', collection.id);
 
       if (error) throw error;
+      
+      // Extract the products from the nested structure
       return data?.map(item => item.products).filter(Boolean) || [];
     },
     enabled: !!collection?.id,
@@ -159,7 +161,7 @@ export default function CollectionDetailPage() {
           </div>
         ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {products.map((product: any) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

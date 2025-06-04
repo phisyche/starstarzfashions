@@ -1,33 +1,32 @@
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Heart, Share2, ShoppingCart, Star, TrendingUp, Eye, Users, ArrowLeft } from 'lucide-react';
-import { AddToCart } from './add-to-cart';
-import { ProductCard } from './product-card';
-import { useFavorites } from '@/context/FavoritesContext';
-import { useSupabase } from '@/context/SupabaseContext';
-import { useToast } from '@/hooks/use-toast';
 import { MainLayout } from '@/components/layout/main-layout';
+import { ProductCard } from '@/components/products/product-card';
+import { AddToCart } from '@/components/products/add-to-cart';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Star, Heart, Share2, ShoppingCart, TrendingUp, Eye, Users, ArrowLeft } from 'lucide-react';
+import { useSupabase } from '@/context/SupabaseContext';
+import { useFavorites } from '@/context/FavoritesContext';
+import { useToast } from '@/hooks/use-toast';
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const { supabase } = useSupabase();
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
   const { toast } = useToast();
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [viewCount, setViewCount] = useState(0);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   // Fetch product details
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
     queryFn: async () => {
+      if (!slug) return null;
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -40,11 +39,11 @@ export function ProductDetailPage() {
     enabled: !!slug,
   });
 
-  // Fetch similar products (same category)
+  // Fetch similar products
   const { data: similarProducts = [] } = useQuery({
-    queryKey: ['similar-products', product?.category, product?.id],
+    queryKey: ['similar-products', product?.category],
     queryFn: async () => {
-      if (!product) return [];
+      if (!product?.category) return [];
       
       const { data, error } = await supabase
         .from('products')
@@ -56,20 +55,18 @@ export function ProductDetailPage() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!product,
+    enabled: !!product?.category,
   });
 
-  // Fetch recommended products (featured products)
+  // Fetch recommended products (featured/new items)
   const { data: recommendedProducts = [] } = useQuery({
-    queryKey: ['recommended-products', product?.id],
+    queryKey: ['recommended-products'],
     queryFn: async () => {
-      if (!product) return [];
-      
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('is_featured', true)
-        .neq('id', product.id)
+        .or('is_featured.eq.true,is_new.eq.true')
+        .neq('id', product?.id || '')
         .limit(4);
 
       if (error) throw error;
@@ -78,51 +75,45 @@ export function ProductDetailPage() {
     enabled: !!product,
   });
 
-  // Track product view
-  useEffect(() => {
-    if (product) {
-      // Store in localStorage for recently viewed
-      const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewedProducts') || '[]');
-      const productForStorage = {
-        id: product.id,
+  const handleToggleFavorite = () => {
+    if (!product) return;
+
+    if (isFavorite(product.id)) {
+      removeFromFavorites(product.id);
+      toast({
+        title: 'Removed from wishlist',
+        description: `${product.name} has been removed from your wishlist.`,
+      });
+    } else {
+      addToFavorites({
+        productId: product.id,
+        product_id: product.id,
         name: product.name,
+        product_name: product.name,
         price: product.price,
         image: product.image,
-        slug: product.slug
-      };
-      
-      const filteredViewed = recentlyViewed.filter((p: any) => p.id !== product.id);
-      const updatedViewed = [productForStorage, ...filteredViewed].slice(0, 10);
-      localStorage.setItem('recentlyViewedProducts', JSON.stringify(updatedViewed));
-
-      // Simulate view count (in real app, this would be tracked in database)
-      setViewCount(Math.floor(Math.random() * 500) + 100);
-    }
-  }, [product]);
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product?.name,
-          text: product?.description,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
+        image_url: product.image,
+      });
       toast({
-        title: 'Link copied!',
-        description: 'Product link has been copied to clipboard.',
+        title: 'Added to wishlist',
+        description: `${product.name} has been added to your wishlist.`,
       });
     }
   };
 
-  const handleFavoriteToggle = () => {
-    if (product) {
-      toggleFavorite(product);
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: product?.name,
+        text: product?.description,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: 'Link copied',
+        description: 'Product link copied to clipboard!',
+      });
     }
   };
 
@@ -131,17 +122,12 @@ export function ProductDetailPage() {
       <MainLayout>
         <div className="container py-8">
           <div className="animate-pulse">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               <div className="aspect-square bg-gray-200 rounded-lg"></div>
               <div className="space-y-4">
                 <div className="h-8 bg-gray-200 rounded w-3/4"></div>
                 <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </div>
+                <div className="h-16 bg-gray-200 rounded"></div>
               </div>
             </div>
           </div>
@@ -156,57 +142,66 @@ export function ProductDetailPage() {
         <div className="container py-16 text-center">
           <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
           <p className="text-gray-600 mb-6">The product you're looking for doesn't exist.</p>
-          <Button onClick={() => navigate('/shop')}>Back to Shop</Button>
+          <Button asChild>
+            <Link to="/shop">Back to Shop</Link>
+          </Button>
         </div>
       </MainLayout>
     );
   }
 
-  const images = product.images && Array.isArray(product.images) ? product.images : [product.image].filter(Boolean);
-  const currentImage = images[selectedImageIndex] || product.image;
+  // Product images array (fallback to single image if no gallery)
+  const productImages = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+
+  // Mock analytics data (in real app, this would come from database)
+  const analytics = {
+    views: Math.floor(Math.random() * 1000) + 100,
+    likes: Math.floor(Math.random() * 200) + 50,
+    orders: Math.floor(Math.random() * 50) + 10,
+  };
 
   return (
     <MainLayout>
       <div className="container py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+          <Link to="/" className="hover:text-primary">Home</Link>
+          <span>/</span>
           <Link to="/shop" className="hover:text-primary">Shop</Link>
           <span>/</span>
-          <Link to={`/shop?category=${product.category}`} className="hover:text-primary capitalize">
-            {product.category}
-          </Link>
+          <span className="capitalize">{product.category}</span>
           <span>/</span>
           <span className="text-gray-900">{product.name}</span>
         </div>
 
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+        {/* Back Button */}
+        <Button variant="ghost" asChild className="mb-6">
+          <Link to="/shop">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Shop
+          </Link>
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Product Main Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+            <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
               <img
-                src={currentImage}
+                src={productImages[selectedImage]}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
             </div>
             
-            {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {images.map((image, index) => (
+            {productImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {productImages.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`aspect-square rounded-md overflow-hidden border-2 ${
-                      selectedImageIndex === index ? 'border-primary' : 'border-gray-200'
+                    onClick={() => setSelectedImage(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-colors ${
+                      selectedImage === index ? 'border-primary' : 'border-gray-200'
                     }`}
                   >
                     <img
@@ -220,246 +215,241 @@ export function ProductDetailPage() {
             )}
           </div>
 
-          {/* Product Details */}
+          {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <div className="flex items-start justify-between mb-2">
-                <h1 className="text-3xl font-bold">{product.name}</h1>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleFavoriteToggle}
-                    className={isFavorite(product.id) ? 'text-red-500' : 'text-gray-400'}
-                  >
-                    <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'fill-current' : ''}`} />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={handleShare}>
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                {product.is_new && <Badge variant="secondary">New</Badge>}
+                {product.is_featured && <Badge>Featured</Badge>}
+                {product.is_sale && <Badge variant="destructive">Sale</Badge>}
               </div>
-
+              
+              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+              
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-4 w-4 ${i < 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                      className={`h-4 w-4 ${i < 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
                     />
                   ))}
-                  <span className="ml-2 text-sm text-gray-600">(4.0) • {viewCount} views</span>
+                  <span className="ml-2 text-sm text-gray-600">(4.0) • 24 reviews</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-3xl font-bold text-primary">${product.price}</span>
-                {product.is_sale && product.discount_percent && (
-                  <>
-                    <span className="text-xl text-gray-500 line-through">
-                      ${(product.price / (1 - product.discount_percent / 100)).toFixed(2)}
-                    </span>
-                    <Badge variant="destructive">{product.discount_percent}% OFF</Badge>
-                  </>
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-3xl font-bold text-primary">
+                  ${Number(product.price).toFixed(2)}
+                </span>
+                {product.is_sale && (
+                  <span className="text-xl text-gray-500 line-through">
+                    ${(Number(product.price) * 1.2).toFixed(2)}
+                  </span>
                 )}
-              </div>
-
-              <div className="flex gap-2 mb-6">
-                {product.is_new && <Badge variant="secondary">New</Badge>}
-                {product.is_featured && <Badge variant="default">Featured</Badge>}
-                {product.is_sale && <Badge variant="destructive">Sale</Badge>}
-                <Badge variant="outline" className="capitalize">{product.category}</Badge>
               </div>
             </div>
 
             {/* Product Analytics */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-sm">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Product Insights
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="flex items-center justify-center mb-1">
-                      <Eye className="h-4 w-4 text-blue-500" />
-                    </div>
-                    <div className="text-lg font-bold">{viewCount}</div>
-                    <div className="text-xs text-gray-500">Views</div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-3">Product Insights</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <Eye className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+                    <div className="text-lg font-bold">{analytics.views}</div>
+                    <div className="text-xs text-gray-600">Views</div>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-center mb-1">
-                      <Heart className="h-4 w-4 text-red-500" />
-                    </div>
-                    <div className="text-lg font-bold">{Math.floor(viewCount * 0.12)}</div>
-                    <div className="text-xs text-gray-500">Favorites</div>
+                  <div className="text-center">
+                    <Heart className="h-5 w-5 text-red-500 mx-auto mb-1" />
+                    <div className="text-lg font-bold">{analytics.likes}</div>
+                    <div className="text-xs text-gray-600">Likes</div>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-center mb-1">
-                      <Users className="h-4 w-4 text-green-500" />
-                    </div>
-                    <div className="text-lg font-bold">{Math.floor(viewCount * 0.08)}</div>
-                    <div className="text-xs text-gray-500">Purchases</div>
+                  <div className="text-center">
+                    <ShoppingCart className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                    <div className="text-lg font-bold">{analytics.orders}</div>
+                    <div className="text-xs text-gray-600">Sold</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Add to Cart */}
-            <AddToCart product={product} />
+            {/* Actions */}
+            <div className="space-y-4">
+              <AddToCart 
+                productId={product.id}
+                price={product.price}
+                stock={product.stock || 100}
+              />
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleToggleFavorite}
+                >
+                  <Heart 
+                    className={`h-4 w-4 mr-2 ${isFavorite(product.id) ? 'fill-red-500 text-red-500' : ''}`} 
+                  />
+                  {isFavorite(product.id) ? 'Saved' : 'Save to Wishlist'}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleShare}
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
             {/* Stock Status */}
-            <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${product.stock && product.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm">
-                {product.stock && product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-              </span>
+            <div className="p-4 bg-green-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium text-green-800">In Stock</span>
+              </div>
+              <p className="text-sm text-green-600 mt-1">
+                {product.stock || 100} items available
+              </p>
             </div>
           </div>
         </div>
 
         {/* Product Details Tabs */}
-        <div className="mt-16">
-          <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="specifications">Specifications</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="shipping">Shipping</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="description" className="mt-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-gray-700 leading-relaxed">
-                    {product.description || 'No description available for this product.'}
-                  </p>
-                  {product.materials && Array.isArray(product.materials) && product.materials.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="font-semibold mb-2">Materials:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {product.materials.map((material: string, index: number) => (
-                          <Badge key={index} variant="outline">{material}</Badge>
-                        ))}
-                      </div>
+        <Tabs defaultValue="description" className="mb-12">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="description">Description</TabsTrigger>
+            <TabsTrigger value="specifications">Specifications</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsTrigger value="shipping">Shipping</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="description" className="mt-6">
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-gray-700 leading-relaxed">
+                  {product.description || 'No description available for this product.'}
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="specifications" className="mt-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium">Category:</span>
+                      <span className="ml-2 capitalize">{product.category}</span>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="specifications" className="mt-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="font-semibold">Category:</span>
-                        <span className="ml-2 capitalize">{product.category}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold">SKU:</span>
-                        <span className="ml-2">{product.id.slice(0, 8).toUpperCase()}</span>
-                      </div>
+                    <div>
+                      <span className="font-medium">Brand:</span>
+                      <span className="ml-2">Star Starz Fashions</span>
                     </div>
-                    
-                    {product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0 && (
-                      <div>
-                        <span className="font-semibold">Available Sizes:</span>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {product.sizes.map((size: string, index: number) => (
-                            <Badge key={index} variant="outline">{size}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {product.colors && Array.isArray(product.colors) && product.colors.length > 0 && (
-                      <div>
-                        <span className="font-semibold">Available Colors:</span>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {product.colors.map((color: string, index: number) => (
-                            <Badge key={index} variant="outline">{color}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <div>
+                      <span className="font-medium">Material:</span>
+                      <span className="ml-2">Premium Cotton Blend</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Size Range:</span>
+                      <span className="ml-2">XS - XXL</span>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="mt-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <div className="flex items-center justify-center mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-6 w-6 ${i < 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                        />
-                      ))}
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">4.0 out of 5</h3>
-                    <p className="text-gray-600 mb-4">Based on {Math.floor(viewCount * 0.15)} reviews</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="reviews" className="mt-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Customer Reviews</h3>
                     <Button variant="outline">Write a Review</Button>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="shipping" className="mt-6">
-              <Card>
-                <CardContent className="pt-6">
+                  
+                  {/* Sample reviews */}
                   <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Shipping Information</h4>
-                      <ul className="space-y-2 text-gray-600">
-                        <li>• Free shipping on orders over $50</li>
-                        <li>• Standard delivery: 3-5 business days</li>
-                        <li>• Express delivery: 1-2 business days</li>
-                        <li>• International shipping available</li>
-                      </ul>
-                    </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Return Policy</h4>
-                      <p className="text-gray-600">
-                        30-day return policy. Items must be in original condition with tags attached.
-                      </p>
-                    </div>
+                    {[
+                      { name: 'Sarah M.', rating: 5, comment: 'Excellent quality and fast shipping!' },
+                      { name: 'John D.', rating: 4, comment: 'Great product, fits perfectly.' },
+                      { name: 'Emma L.', rating: 5, comment: 'Love the design and comfort!' },
+                    ].map((review, index) => (
+                      <div key={index} className="border-b pb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium">{review.name}</span>
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-3 w-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-gray-600 text-sm">{review.comment}</p>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="shipping" className="mt-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Shipping Information</h3>
+                  <div className="space-y-2">
+                    <p><span className="font-medium">Free shipping</span> on orders over $50</p>
+                    <p><span className="font-medium">Standard delivery:</span> 3-5 business days</p>
+                    <p><span className="font-medium">Express delivery:</span> 1-2 business days</p>
+                    <p><span className="font-medium">International shipping:</span> 7-14 business days</p>
+                  </div>
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-2">Return Policy</h4>
+                    <p className="text-sm text-gray-600">
+                      30-day returns. Items must be in original condition with tags attached.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Similar Products */}
         {similarProducts.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">Similar Products</h2>
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp className="h-5 w-5" />
+              <h2 className="text-2xl font-bold">Similar Products</h2>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {similarProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {similarProducts.map((similarProduct) => (
+                <ProductCard key={similarProduct.id} product={similarProduct} />
               ))}
             </div>
-          </div>
+          </section>
         )}
 
         {/* Recommended Products */}
         {recommendedProducts.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">Recommended for You</h2>
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <Users className="h-5 w-5" />
+              <h2 className="text-2xl font-bold">You Might Also Like</h2>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {recommendedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {recommendedProducts.map((recommendedProduct) => (
+                <ProductCard key={recommendedProduct.id} product={recommendedProduct} />
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
     </MainLayout>

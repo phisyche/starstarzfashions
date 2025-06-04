@@ -24,6 +24,8 @@ import Callback from "./pages/auth/Callback";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsPage from "./pages/TermsPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import CollectionsPage from "./pages/CollectionsPage";
+import CollectionDetailPage from "./pages/CollectionDetailPage";
 
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -37,6 +39,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminImages from "./pages/admin/AdminImages";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminCollections from "./pages/admin/AdminCollections";
 import SupabaseSetupGuide from "./pages/admin/SupabaseSetupGuide";
 
 const queryClient = new QueryClient();
