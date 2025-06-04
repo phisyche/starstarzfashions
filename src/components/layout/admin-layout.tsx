@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useSupabase } from '@/context/SupabaseContext';
@@ -151,6 +150,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       title: 'Products',
       icon: Package,
       path: '/admin/products',
+      disabled: false
+    },
+    {
+      title: 'Collections',
+      icon: Image,
+      path: '/admin/collections',
       disabled: false
     },
     {

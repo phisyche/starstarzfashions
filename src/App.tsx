@@ -67,6 +67,8 @@ const App = () => (
                 <Route path="/auth/callback" element={<Callback />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/collections" element={<CollectionsPage />} />
+                <Route path="/collections/:slug" element={<CollectionDetailPage />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLogin />} />
@@ -79,6 +81,7 @@ const App = () => (
                 <Route path="/admin/customers" element={<AdminCustomers />} />
                 <Route path="/admin/payments" element={<AdminPayments />} />
                 <Route path="/admin/images" element={<AdminImages />} />
+                <Route path="/admin/collections" element={<AdminCollections />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="/admin/setup" element={<SupabaseSetupGuide />} />
                 

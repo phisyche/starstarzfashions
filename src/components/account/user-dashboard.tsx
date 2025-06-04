@@ -225,47 +225,55 @@ export function UserDashboard() {
           </CardContent>
         </Card>
 
-        {/* Recently Viewed Products */}
+        {/* Wishlist Preview */}
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Eye className="mr-2 h-5 w-5" />
-              Recently Viewed Products
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Heart className="mr-2 h-5 w-5" />
+                My Wishlist
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/account/wishlist">View All</Link>
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentViewedProducts.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {recentViewedProducts.map((product) => (
-                    <Link 
-                      key={product.id} 
-                      to={`/product/${product.slug}`} 
-                      className="group"
-                    >
-                      <div className="bg-muted/50 rounded-lg overflow-hidden">
-                        <div className="aspect-[4/3] relative overflow-hidden">
-                          <img 
-                            src={product.image} 
-                            alt={product.name} 
-                            className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        </div>
-                        <div className="p-3">
-                          <h4 className="font-medium truncate">{product.name}</h4>
-                          <p className="text-sm text-muted-foreground">${Number(product.price).toFixed(2)}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+            {isLoadingFavorites ? (
+              Array(2).fill(0).map((_, i) => (
+                <div key={i} className="mb-4">
+                  <Skeleton className="h-20 w-full" />
                 </div>
+              ))
+            ) : favorites && favorites.length > 0 ? (
+              <div className="space-y-4">
+                {favorites.slice(0, 3).map((item) => (
+                  <div key={item.id} className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-md overflow-hidden bg-gray-100">
+                      <img
+                        src={item.image || item.image_url}
+                        alt={item.name || item.product_name}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {item.name || item.product_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        ${Number(item.price).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
                 <Button variant="outline" className="w-full" asChild>
-                  <Link to="/shop">Browse More Products</Link>
+                  <Link to="/account/wishlist">View All ({favorites.length})</Link>
                 </Button>
               </div>
             ) : (
               <div className="text-center py-6">
-                <p className="text-muted-foreground">No products viewed recently.</p>
+                <Heart className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Your wishlist is empty.</p>
                 <Button variant="outline" className="mt-4" asChild>
                   <Link to="/shop">Browse Products</Link>
                 </Button>
