@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useSupabase } from './SupabaseContext';
 import { FavoriteItem } from '@/types/models';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface FavoritesContextType {
   favorites: FavoriteItem[];
@@ -38,7 +38,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (user && supabase) {
           // Fetch favorites from database
           const { data, error } = await supabase
-            .from('favorites')
+            .from('favorite_items')
             .select(`
               id,
               product_id,
@@ -49,22 +49,27 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             .eq('user_id', user.id);
             
           if (error) {
-            throw error;
+            console.error('Error fetching favorites:', error);
+            // Don't throw error, just log it and use localStorage
+            const storedFavorites = localStorage.getItem('favoriteItems');
+            if (storedFavorites) {
+              setFavorites(JSON.parse(storedFavorites));
+            }
+          } else {
+            // Transform to match FavoriteItem interface
+            const transformedData = data.map(item => ({
+              id: item.id,
+              productId: item.product_id,
+              product_id: item.product_id,
+              name: item.product_name,
+              product_name: item.product_name,
+              price: item.price,
+              image: item.image_url,
+              image_url: item.image_url
+            }));
+            
+            setFavorites(transformedData);
           }
-          
-          // Transform to match FavoriteItem interface
-          const transformedData = data.map(item => ({
-            id: item.id,
-            productId: item.product_id,
-            product_id: item.product_id,
-            name: item.product_name,
-            product_name: item.product_name,
-            price: item.price,
-            image: item.image_url,
-            image_url: item.image_url
-          }));
-          
-          setFavorites(transformedData);
         } else {
           // Get from localStorage if not authenticated
           const storedFavorites = localStorage.getItem('favoriteItems');
@@ -74,6 +79,11 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       } catch (error) {
         console.error('Error fetching favorites:', error);
+        // Fallback to localStorage
+        const storedFavorites = localStorage.getItem('favoriteItems');
+        if (storedFavorites) {
+          setFavorites(JSON.parse(storedFavorites));
+        }
       } finally {
         setLoading(false);
       }
@@ -106,7 +116,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (user && supabase) {
         // Add to database
         const { data, error } = await supabase
-          .from('favorites')
+          .from('favorite_items')
           .insert({
             user_id: user.id,
             product_id: product.id,
@@ -118,11 +128,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           .single();
           
         if (error) {
-          throw error;
+          console.error('Error adding to favorites database:', error);
+          // Still add to local state and localStorage
+        } else {
+          // Update id with the one from the database
+          favoriteItem.id = data.id;
         }
-        
-        // Update id with the one from the database
-        favoriteItem.id = data.id;
       }
       
       // Update state
@@ -148,13 +159,14 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (user && supabase) {
         // Remove from database
         const { error } = await supabase
-          .from('favorites')
+          .from('favorite_items')
           .delete()
           .eq('user_id', user.id)
           .eq('product_id', productId);
           
         if (error) {
-          throw error;
+          console.error('Error removing from favorites database:', error);
+          // Still remove from local state
         }
       }
       

@@ -4,7 +4,6 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/main-layout';
 import { ProductCard } from '@/components/products/product-card';
-import { AddToCart } from '@/components/products/add-to-cart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,12 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star, Heart, Share2, ShoppingCart, TrendingUp, Eye, Users, ArrowLeft } from 'lucide-react';
 import { useSupabase } from '@/context/SupabaseContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { supabase } = useSupabase();
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+  const { addItem } = useCart();
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState(0);
 
@@ -101,6 +102,23 @@ export function ProductDetailPage() {
     }
   };
 
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+    });
+    
+    toast({
+      title: 'Added to cart',
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -151,7 +169,9 @@ export function ProductDetailPage() {
   }
 
   // Product images array (fallback to single image if no gallery)
-  const productImages = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+  const productImages = product.images && Array.isArray(product.images) && product.images.length > 0 
+    ? product.images 
+    : [product.image];
 
   // Mock analytics data (in real app, this would come from database)
   const analytics = {
@@ -188,7 +208,7 @@ export function ProductDetailPage() {
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
               <img
-                src={productImages[selectedImage]}
+                src={productImages[selectedImage] || product.image}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -242,9 +262,9 @@ export function ProductDetailPage() {
                 <span className="text-3xl font-bold text-primary">
                   ${Number(product.price).toFixed(2)}
                 </span>
-                {product.is_sale && (
+                {product.is_sale && product.discount_percent && (
                   <span className="text-xl text-gray-500 line-through">
-                    ${(Number(product.price) * 1.2).toFixed(2)}
+                    ${(Number(product.price) / (1 - product.discount_percent / 100)).toFixed(2)}
                   </span>
                 )}
               </div>
@@ -276,11 +296,13 @@ export function ProductDetailPage() {
 
             {/* Actions */}
             <div className="space-y-4">
-              <AddToCart 
-                productId={product.id}
-                price={product.price}
-                stock={product.stock || 100}
-              />
+              <Button 
+                className="w-full"
+                onClick={handleAddToCart}
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Add to Cart
+              </Button>
               
               <div className="flex gap-2">
                 <Button
@@ -349,12 +371,20 @@ export function ProductDetailPage() {
                       <span className="ml-2">Star Starz Fashions</span>
                     </div>
                     <div>
-                      <span className="font-medium">Material:</span>
-                      <span className="ml-2">Premium Cotton Blend</span>
+                      <span className="font-medium">Materials:</span>
+                      <span className="ml-2">
+                        {product.materials && Array.isArray(product.materials) 
+                          ? product.materials.join(', ') 
+                          : 'Premium Cotton Blend'}
+                      </span>
                     </div>
                     <div>
-                      <span className="font-medium">Size Range:</span>
-                      <span className="ml-2">XS - XXL</span>
+                      <span className="font-medium">Available Sizes:</span>
+                      <span className="ml-2">
+                        {product.sizes && Array.isArray(product.sizes) 
+                          ? product.sizes.join(', ') 
+                          : 'XS - XXL'}
+                      </span>
                     </div>
                   </div>
                 </div>
