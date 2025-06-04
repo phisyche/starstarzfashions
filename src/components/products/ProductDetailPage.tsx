@@ -76,17 +76,18 @@ export function ProductDetailPage() {
     enabled: !!product,
   });
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = async () => {
     if (!product) return;
 
     if (isFavorite(product.id)) {
-      removeFromFavorites(product.id);
+      await removeFromFavorites(product.id);
       toast({
         title: 'Removed from wishlist',
         description: `${product.name} has been removed from your wishlist.`,
       });
     } else {
-      addToFavorites({
+      await addToFavorites({
+        id: product.id,
         productId: product.id,
         product_id: product.id,
         name: product.name,

@@ -6,10 +6,34 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { useSupabase } from '@/context/SupabaseContext';
-import { Order, OrderItem } from '@/types/models';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+
+interface Order {
+  id: string;
+  user_id: string;
+  status: string;
+  payment_status: string;
+  total_amount: number;
+  shipping_address: any;
+  payment_method: string;
+  mpesa_reference?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  price: number;
+  quantity: number;
+  size?: string;
+  color?: string;
+  created_at: string;
+}
 
 export default function AdminViewOrder() {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +72,7 @@ export default function AdminViewOrder() {
         
         if (itemsError) throw itemsError;
         
-        setOrderItems(itemsData);
+        setOrderItems(itemsData || []);
         
       } catch (error) {
         console.error('Error fetching order details:', error);
@@ -65,7 +89,7 @@ export default function AdminViewOrder() {
     fetchOrderDetails();
   }, [id, supabase, toast]);
   
-  const handleStatusUpdate = async (newStatus: Order['status']) => {
+  const handleStatusUpdate = async (newStatus: string) => {
     if (!order || !id) return;
     
     try {
@@ -97,7 +121,7 @@ export default function AdminViewOrder() {
     }
   };
   
-  const getStatusColor = (status: Order['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-500';
@@ -112,7 +136,7 @@ export default function AdminViewOrder() {
     }
   };
 
-  const getPaymentStatusColor = (status: Order['payment_status']) => {
+  const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
         return 'bg-green-500';

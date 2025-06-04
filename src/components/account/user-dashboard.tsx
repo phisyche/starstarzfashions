@@ -20,7 +20,7 @@ export function UserDashboard() {
   const { supabase, user } = useSupabase();
   const [recentViewedProducts, setRecentViewedProducts] = useState<any[]>([]);
   
-  // Fetch user orders
+  // Fetch user orders with proper relationship
   const { data: orders, isLoading: isLoadingOrders } = useQuery({
     queryKey: ['user-orders', user?.id],
     queryFn: async () => {
@@ -42,7 +42,7 @@ export function UserDashboard() {
     enabled: !!user,
   });
 
-  // Fetch user favorites
+  // Fetch user favorites with proper relationship
   const { data: favorites, isLoading: isLoadingFavorites } = useQuery({
     queryKey: ['user-favorites', user?.id],
     queryFn: async () => {
@@ -63,7 +63,7 @@ export function UserDashboard() {
     enabled: !!user,
   });
 
-  // Fetch user cart items
+  // Fetch user cart items with proper relationship
   const { data: cartItems, isLoading: isLoadingCart } = useQuery({
     queryKey: ['user-cart', user?.id],
     queryFn: async () => {
@@ -251,14 +251,14 @@ export function UserDashboard() {
                   <div key={item.id} className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-md overflow-hidden bg-gray-100">
                       <img
-                        src={item.image || item.image_url}
-                        alt={item.name || item.product_name}
+                        src={item.image_url}
+                        alt={item.product_name}
                         className="h-full w-full object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {item.name || item.product_name}
+                        {item.product_name}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         ${Number(item.price).toFixed(2)}
